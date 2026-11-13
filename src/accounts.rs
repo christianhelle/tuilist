@@ -1,0 +1,323 @@
+//! The accounts signed in to, and how each one signs in again.
+
+use std::{
+    io,
+    path::{Path, PathBuf},
+};
+
+use serde::{Deserialize, Serialize};
+
+/// One mailbox, known by its email address.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Account {
+    pub address: String,
+    /// The tenant and app registration it signed in with, used to refresh
+    /// its sign-in whatever the command line says now.
+    pub tenant: String,
+    pub client_id: String,
+}
+
+#[derive(Debug, thiserror::Error, PartialEq, Eq)]
+pub enum FindError {
+    #[error("no signed-in account matches {0}; see `todo accounts`")]
+    NoMatch(String),
+    #[error("{0} matches more than one account: {list}", list = .1.join(", "))]
+    Ambiguous(String, Vec<String>),
+}
+
+/// The signed-in accounts, in the order they signed in.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Accounts(pub Vec<Account>);
+
+impl Accounts {
+    /// The accounts saved at `path`, or none when nothing is saved there.
+    pub fn load(path: &Path) -> io::Result<Self> {
+        match std::fs::read_to_string(path) {
+            Ok(text) => serde_json::from_str(&text).map_err(io::Error::other),
+            Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(Self::default()),
+            Err(e) => Err(e),
+        }
+    }
+
+    pub fn save(&self, path: &Path) -> io::Result<()> {
+        let text = serde_json::to_string_pretty(self).map_err(io::Error::other)?;
+        std::fs::write(path, text)
+    }
+
+    /// Adds `account`, or replaces the one with the same address.
+    pub fn upsert(&mut self, account: Account) {
+        match self
+            .0
+            .iter_mut()
+            .find(|a| same(&a.address, &account.address))
+        {
+            Some(known) => *known = account,
+            None => self.0.push(account),
+        }
+    }
+
+    /// Moves the account at `address` `delta` places later, or earlier when
+    /// negative, stopping at either end.
+    pub fn move_by(&mut self, address: &str, delta: isize) {
+        let Some(from) = self.0.iter().position(|a| same(&a.address, address)) else {
+            return;
+        };
+        let last = self.0.len() - 1;
+        let to = from.saturating_add_signed(delta).min(last);
+        let account = self.0.remove(from);
+        self.0.insert(to, account);
+    }
+
+    pub fn remove(&mut self, address: &str) {
+        self.0.retain(|a| !same(&a.address, address));
+    }
+
+    /// The account whose address is `query`, or the only one starting with it.
+    pub fn find(&self, query: &str) -> Result<&Account, FindError> {
+        if let Some(account) = self.0.iter().find(|a| same(&a.address, query)) {
+            return Ok(account);
+        }
+        let query_lower = query.to_lowercase();
+        let matches: Vec<&Account> = self
+            .0
+            .iter()
+            .filter(|a| a.address.to_lowercase().starts_with(&query_lower))
+            .collect();
+        match matches[..] {
+            [account] => Ok(account),
+            [] => Err(FindError::NoMatch(query.to_owned())),
+            _ => Err(FindError::Ambiguous(
+                query.to_owned(),
+                matches.iter().map(|a| a.address.clone()).collect(),
+            )),
+        }
+    }
+}
+
+/// Where tuilist keeps the accounts signed in to, and each account's cache
+/// in a folder named after its address.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Registry {
+    root: PathBuf,
+}
+
+impl Registry {
+    pub fn at(root: PathBuf) -> Self {
+        Self { root }
+    }
+
+    /// The file listing the accounts.
+    pub fn file(&self) -> PathBuf {
+        self.root.join("accounts.json")
+    }
+
+    pub fn load(&self) -> io::Result<Accounts> {
+        Accounts::load(&self.file())
+    }
+
+    /// Changes the saved accounts with `f`, reading them first so changes
+    /// made since, such as a sign-in from another todo, are kept.
+    pub fn change(&self, f: impl FnOnce(&mut Accounts)) -> io::Result<()> {
+        let mut accounts = self.load()?;
+        f(&mut accounts);
+        accounts.save(&self.file())
+    }
+
+    /// The folder `address`'s cached data is kept in.
+    pub fn account_dir(&self, address: &str) -> PathBuf {
+        self.root.join(address)
+    }
+
+    /// Where `address`'s cached data is kept, making its folder if need be.
+    pub fn cache_path(&self, address: &str) -> io::Result<PathBuf> {
+        let dir = self.account_dir(address);
+        std::fs::create_dir_all(&dir)?;
+        Ok(dir.join("cache.db"))
+    }
+
+    /// Drops the account at `address` from the list and deletes its cached
+    /// data, which must be closed. Its sign-in is the caller's to clear.
+    pub fn forget(&self, address: &str) -> io::Result<()> {
+        self.change(|accounts| accounts.remove(address))?;
+        match std::fs::remove_dir_all(self.account_dir(address)) {
+            Err(e) if e.kind() != io::ErrorKind::NotFound => Err(e),
+            _ => Ok(()),
+        }
+    }
+}
+
+/// Email addresses are compared without regard to case.
+fn same(a: &str, b: &str) -> bool {
+    a.eq_ignore_ascii_case(b)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn account(address: &str) -> Account {
+        Account {
+            address: address.to_owned(),
+            tenant: "consumers".to_owned(),
+            client_id: "app".to_owned(),
+        }
+    }
+
+    fn accounts() -> Accounts {
+        Accounts(vec![
+            account("me@outlook.com"),
+            account("me@work.example"),
+            account("other@outlook.com"),
+        ])
+    }
+
+    #[test]
+    fn saves_and_loads_again() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("accounts.json");
+
+        accounts().save(&path).unwrap();
+
+        assert_eq!(Accounts::load(&path).unwrap(), accounts());
+    }
+
+    #[test]
+    fn nothing_saved_means_no_accounts() {
+        let dir = tempfile::tempdir().unwrap();
+
+        let loaded = Accounts::load(&dir.path().join("accounts.json")).unwrap();
+
+        assert!(loaded.0.is_empty());
+    }
+
+    #[test]
+    fn signing_in_again_replaces_the_account() {
+        let mut accounts = accounts();
+        let again = Account {
+            tenant: "organizations".to_owned(),
+            ..account("ME@work.example")
+        };
+
+        accounts.upsert(again.clone());
+
+        assert_eq!(accounts.0.len(), 3);
+        assert_eq!(accounts.0[1], again);
+    }
+
+    #[test]
+    fn finds_by_address_or_a_unique_start() {
+        let accounts = accounts();
+
+        assert_eq!(
+            accounts.find("ME@OUTLOOK.COM").unwrap().address,
+            "me@outlook.com"
+        );
+        assert_eq!(accounts.find("me@w").unwrap().address, "me@work.example");
+        assert_eq!(accounts.find("oth").unwrap().address, "other@outlook.com");
+    }
+
+    #[test]
+    fn a_start_shared_by_several_is_ambiguous() {
+        assert_eq!(
+            accounts().find("me"),
+            Err(FindError::Ambiguous(
+                "me".to_owned(),
+                vec!["me@outlook.com".to_owned(), "me@work.example".to_owned()]
+            ))
+        );
+        assert_eq!(
+            accounts().find("nobody"),
+            Err(FindError::NoMatch("nobody".to_owned()))
+        );
+    }
+
+    #[test]
+    fn moves_an_account_up_or_down() {
+        let mut accounts = accounts();
+
+        accounts.move_by("OTHER@outlook.com", -1);
+
+        let order: Vec<_> = accounts.0.iter().map(|a| a.address.as_str()).collect();
+        assert_eq!(
+            order,
+            ["me@outlook.com", "other@outlook.com", "me@work.example"]
+        );
+    }
+
+    #[test]
+    fn moving_past_either_end_stays_there() {
+        let mut accounts = accounts();
+
+        accounts.move_by("me@outlook.com", -1);
+        accounts.move_by("other@outlook.com", 5);
+        accounts.move_by("nobody@outlook.com", 1);
+
+        assert_eq!(accounts, self::accounts());
+    }
+
+    #[test]
+    fn removes_by_address() {
+        let mut accounts = accounts();
+
+        accounts.remove("Me@Outlook.com");
+
+        assert_eq!(accounts.0.len(), 2);
+        assert!(accounts.find("me@outlook.com").is_err());
+    }
+
+    fn registry() -> (tempfile::TempDir, Registry) {
+        let dir = tempfile::tempdir().unwrap();
+        let registry = Registry::at(dir.path().to_owned());
+        (dir, registry)
+    }
+
+    #[test]
+    fn a_registry_keeps_its_accounts_in_its_folder() {
+        let (dir, registry) = registry();
+
+        registry
+            .change(|accounts| *accounts = self::accounts())
+            .unwrap();
+
+        assert_eq!(registry.file(), dir.path().join("accounts.json"));
+        assert_eq!(registry.load().unwrap(), accounts());
+    }
+
+    #[test]
+    fn each_account_caches_in_a_folder_of_its_own() {
+        let (dir, registry) = registry();
+
+        let path = registry.cache_path("me@outlook.com").unwrap();
+
+        assert_eq!(path, dir.path().join("me@outlook.com").join("cache.db"));
+        assert!(dir.path().join("me@outlook.com").is_dir());
+    }
+
+    #[test]
+    fn forgetting_drops_the_account_and_its_cache() {
+        let (dir, registry) = registry();
+        registry
+            .change(|accounts| *accounts = self::accounts())
+            .unwrap();
+        let cache = registry.cache_path("me@outlook.com").unwrap();
+        std::fs::write(&cache, "mail").unwrap();
+
+        registry.forget("me@outlook.com").unwrap();
+
+        assert!(registry.load().unwrap().find("me@outlook.com").is_err());
+        assert_eq!(registry.load().unwrap().0.len(), 2);
+        assert!(!dir.path().join("me@outlook.com").exists());
+    }
+
+    #[test]
+    fn forgetting_an_account_with_no_cache_still_drops_it() {
+        let (_dir, registry) = registry();
+        registry
+            .change(|accounts| *accounts = self::accounts())
+            .unwrap();
+
+        registry.forget("other@outlook.com").unwrap();
+
+        assert_eq!(registry.load().unwrap().0.len(), 2);
+    }
+}
