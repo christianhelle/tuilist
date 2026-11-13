@@ -17,6 +17,9 @@ use crate::tui::{
     task_list::due_text,
 };
 
+/// Wide enough for account addresses and ordinary list names.
+const LISTS_WIDTH: u16 = 24;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Mouse {
     Click,
@@ -87,9 +90,10 @@ pub fn panes(area: Rect, app: &AppState) -> Panes {
             },
         };
     }
+    let lists_width = if area.width < 60 { 16 } else { LISTS_WIDTH };
     if app.details_below {
         let [left, right] = Layout::horizontal([
-            Constraint::Length(if app.lists_hidden { 0 } else { 18 }),
+            Constraint::Length(if app.lists_hidden { 0 } else { lists_width }),
             Constraint::Min(1),
         ])
         .areas(area);
@@ -116,7 +120,7 @@ pub fn panes(area: Rect, app: &AppState) -> Panes {
         }
     } else {
         let [lists, tasks, details] = Layout::horizontal([
-            Constraint::Length(18),
+            Constraint::Length(lists_width),
             Constraint::Percentage(45),
             Constraint::Min(1),
         ])
