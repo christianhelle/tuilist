@@ -11,5 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The terminal UI: lists, tasks and details panes, vim keys, dialogs, and a
   `--demo` showcase that runs without a Microsoft account.
+- Editing tasks, steps and lists in the demo, with writes that revert and say
+  why when the service refuses them.
+- Searching tasks across accounts with `/`.
 
 [Unreleased]: https://github.com/christianhelle/tuilist/commits/main
