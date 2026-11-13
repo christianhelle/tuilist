@@ -1,5 +1,6 @@
 use std::{
     io,
+    path::{Path, PathBuf},
     time::{Duration, Instant},
 };
 
@@ -14,8 +15,9 @@ use ratatui::{
     },
     layout::Rect,
 };
+use tokio::sync::mpsc;
 use tuilist::{
-    core::{sync_lists, sync_tasks},
+    core::{fake::FakeBackend, run_engine, sync_lists, sync_tasks},
     store::Store,
     tui::{
         app::AppState, demo, keymap::Keymap, run_loop::on_terminal_event, session::Session,
@@ -66,15 +68,27 @@ fn main() -> Result<()> {
     if !cli.demo {
         anyhow::bail!("Not signed in. Run todo login, or todo --demo to look around.")
     }
-    let runtime = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()?;
-    let accounts = runtime.block_on(seed_demo())?;
+    let runtime = tokio::runtime::Runtime::new()?;
+    let dir = tempfile::tempdir()?;
+    let seeded = runtime.block_on(seed_demo(dir.path()))?;
+    let mut accounts = Vec::new();
+    let mut engines = Vec::new();
+    for (address, store, backend, path) in seeded {
+        let display = Store::open(&path)?;
+        let (commands, receiver) = mpsc::unbounded_channel();
+        let (events, receiver_events) = mpsc::channel(64);
+        runtime.spawn(run_engine(backend, store, receiver, events));
+        accounts.push((address, display));
+        engines.push((commands, receiver_events));
+    }
     let mut app = AppState {
         clock: Some(Zoned::now()),
         ..AppState::default()
     };
     let mut boxes = TaskBoxes::new(accounts);
+    for (account, (commands, events)) in engines.into_iter().enumerate() {
+        boxes.attach(account, commands, events);
+    }
     boxes.load(&mut app)?;
     if let Some(session) = Session::load() {
         session.apply(&mut app);
@@ -84,10 +98,11 @@ fn main() -> Result<()> {
     Session::of(&app).save()
 }
 
-async fn seed_demo() -> Result<Vec<(String, Store)>> {
+async fn seed_demo(dir: &Path) -> Result<Vec<(String, Store, FakeBackend, PathBuf)>> {
     let mut accounts = Vec::new();
-    for (address, backend) in demo::accounts() {
-        let mut store = Store::open_in_memory()?;
+    for (index, (address, backend)) in demo::accounts().into_iter().enumerate() {
+        let path = dir.join(format!("account-{index}.db"));
+        let mut store = Store::open(&path)?;
         sync_lists(&backend, &mut store).await?;
         let lists = store.lists()?;
         for list in &lists {
@@ -101,7 +116,7 @@ async fn seed_demo() -> Result<Vec<(String, Store)>> {
                 }
             }
         }
-        accounts.push((address, store));
+        accounts.push((address, store, backend, path));
     }
     Ok(accounts)
 }
@@ -119,6 +134,7 @@ fn with_terminal<T>(f: impl FnOnce(&mut DefaultTerminal) -> Result<T>) -> Result
 fn drive(terminal: &mut DefaultTerminal, app: &mut AppState, boxes: &mut TaskBoxes) -> Result<()> {
     let mut keymap = Keymap::default();
     while !app.should_quit {
+        boxes.poll(app);
         app.expire_status(Instant::now());
         terminal.draw(|frame| ui::draw(frame, app))?;
         if event::poll(Duration::from_millis(100))? {
