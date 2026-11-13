@@ -1,0 +1,34 @@
+---
+source: tests/tui_render.rs
+expression: screen(&mut app)
+---
+╭ All ─────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ▾ Groceries (4)                                                                                  │
+│ > [ ] Buy milk                                                                        1/2 ★ Today│
+│   [ ] Coffee beans                                                                     1/3 Sun 15│
+│   [ ] Bread                                                                                     ↻│
+│   [ ] Oat milk                                                                             Thu 19│
+│ ▾ Work (3)                                                                                       │
+│   [ ] Send the status report                                                              ★ Today│
+│   [ ] Review the pull request                                                           Yesterday│
+│   [ ] Plan the next sprint                                                             2/3 Mon 16│
+│ ▾ Reading (2)                                                                                    │
+│   [ ] Read Dune                                                                                  │
+│   [ ] Read the saved articles                                                              23 Nov│
+│ ▾ Shared (1)                                                                                     │
+│   [ ] Pack the boxes                                                                 0/1 Tomorrow│
+│ ▾ Tasks (18)                                                                                     │
+│   [ ] Water the plants                                                                          ★│
+│   [ ] Call the dentist                                                                      Today│
+│   [ ] Renew the passport                                                                   13 Dec│
+│   [ ] Pay the rent                                                                       ↻ Wed 18│
+│   [ ] Book the flights                                                                     Wed 18│
+│   [ ] Return the parcel                                                                    11 Nov│
+│ ▾ Flagged email (2)                                                                              │
+│   [ ] Email from the bank                                                                       ★│
+│ ▾ Tasks (18)                                                                                     │
+│   [ ] Send the invoices                                                                   ★ Today│
+│   [ ] Write the quarterly report                                                       3/4 Sun 15│
+│   [ ] Prepare the standup                                                                       ↻│
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+  ? help · Tab switch pane · a add · x complete · e edit · / search · d delete · q quit
