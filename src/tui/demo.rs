@@ -431,15 +431,20 @@ const fn spec(
 
 /// Each demo account's address and the lists and tasks it has.
 pub fn accounts() -> Vec<(String, FakeBackend)> {
+    accounts_at(Zoned::now())
+}
+
+/// The same demo accounts, dated from `now` so tests do not depend on today.
+pub fn accounts_at(now: Zoned) -> Vec<(String, FakeBackend)> {
+    let today = now.date();
+    let now = now.timestamp().as_second();
     vec![
-        ("ada@outlook.com".to_owned(), personal()),
-        ("ada@work.example".to_owned(), work()),
+        ("ada@outlook.com".to_owned(), personal(now, today)),
+        ("ada@work.example".to_owned(), work(now, today)),
     ]
 }
 
-fn personal() -> FakeBackend {
-    let now = Timestamp::now().as_second();
-    let today = Zoned::now().date();
+fn personal(now: i64, today: jiff::civil::Date) -> FakeBackend {
     let lists = vec![
         well_known("p-tasks", "Tasks", WellKnown::DefaultList),
         list("p-groceries", "Groceries"),
@@ -466,9 +471,7 @@ fn personal() -> FakeBackend {
         .with_steps(&steps)
 }
 
-fn work() -> FakeBackend {
-    let now = Timestamp::now().as_second();
-    let today = Zoned::now().date();
+fn work(now: i64, today: jiff::civil::Date) -> FakeBackend {
     let lists = vec![
         well_known("w-tasks", "Tasks", WellKnown::DefaultList),
         list("w-projects", "Projects"),
