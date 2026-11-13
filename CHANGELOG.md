@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update checks at start and with `todo check-update`, and installing a release
   with `todo update` or `U`.
 
+### Changed
+
+- The lists pane is wider, so account addresses and list names are readable.
+
 ### Fixed
 
 - The details pane's arrow, page and jump keys move between tasks.
