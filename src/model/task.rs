@@ -96,6 +96,7 @@ pub struct Task {
     /// From the store, 0/0 until steps have been fetched.
     pub steps_done: u32,
     pub steps_total: u32,
+    pub steps_loaded: bool,
 }
 
 /// What a create or an edit sends. `None` leaves a field alone; `Some(None)`
@@ -156,6 +157,7 @@ mod tests {
             has_attachments: false,
             steps_done: 0,
             steps_total: 0,
+            steps_loaded: false,
         }
     }
 
