@@ -157,3 +157,31 @@ fn space_marks_rows_and_escape_clears_them() {
     press(&mut app, KeyCode::Esc);
     assert!(app.marks.is_empty());
 }
+
+#[test]
+fn y_copies_the_title_and_c_hides_completed() {
+    let (mut app, _boxes) = demo_app();
+    app.focus = Pane::Tasks;
+
+    let Effect::Copy(title) = press(&mut app, KeyCode::Char('y')) else {
+        panic!("y should copy the title");
+    };
+    assert!(!title.is_empty());
+
+    assert!(!app.completed_hidden);
+    press(&mut app, KeyCode::Char('c'));
+    assert!(app.completed_hidden);
+}
+
+#[test]
+fn t_and_s_open_prompts_for_a_date_and_a_step() {
+    let (mut app, _boxes) = demo_app();
+    app.focus = Pane::Tasks;
+
+    assert!(matches!(press(&mut app, KeyCode::Char('T')), Effect::None));
+    assert!(matches!(app.dialog, Some(Dialog::Due(_))));
+    app.dialog = None;
+
+    assert!(matches!(press(&mut app, KeyCode::Char('s')), Effect::None));
+    assert!(matches!(app.dialog, Some(Dialog::Name(_))));
+}
