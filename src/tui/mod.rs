@@ -3,6 +3,7 @@
 pub mod account_manager;
 pub mod app;
 pub mod clipboard;
+pub mod demo;
 pub mod details;
 pub mod dialog;
 pub mod editor;
