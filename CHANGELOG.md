@@ -18,5 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `todo logout` and `todo accounts`.
 - Browsing real accounts from an offline cache, with sync in the background,
   on `F5`, and from `todo sync`.
+- Update checks at start and with `todo check-update`, and installing a release
+  with `todo update` or `U`.
 
 [Unreleased]: https://github.com/christianhelle/tuilist/commits/main
