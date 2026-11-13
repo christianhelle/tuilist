@@ -635,6 +635,10 @@ fn draw_dialog(frame: &mut Frame, area: Rect, dialog: &Dialog, app: &AppState) {
                 lines.push(Line::from(format!("  {address}")).style(style));
             }
             lines.push(Line::from(""));
+            lines.push(
+                Line::from("  Add or remove accounts with `todo login` and `todo logout`.")
+                    .style(Style::new().dim()),
+            );
             lines.push(Line::from("  Esc closes").style(Style::new().dim()));
             frame.render_widget(Paragraph::new(lines).block(block), rect);
         }
