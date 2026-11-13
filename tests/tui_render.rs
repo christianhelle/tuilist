@@ -56,7 +56,11 @@ fn demo_app() -> (AppState, TaskBoxes) {
 }
 
 fn screen(app: &mut AppState) -> String {
-    let mut terminal = Terminal::new(TestBackend::new(100, 30)).unwrap();
+    screen_at(app, 100, 30)
+}
+
+fn screen_at(app: &mut AppState, width: u16, height: u16) -> String {
+    let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
     terminal.draw(|frame| ui::draw(frame, app)).unwrap();
     let buffer = terminal.backend().buffer();
     let width = usize::from(buffer.area.width);
@@ -235,4 +239,52 @@ fn a_search_with_no_results_says_so() {
     search(&mut app, &mut boxes, "zzzz");
 
     insta::assert_snapshot!(screen(&mut app));
+}
+
+#[test]
+fn a_terminal_too_small_only_says_so() {
+    let (mut app, _boxes) = demo_app();
+
+    let screen = screen_at(&mut app, 30, 6);
+
+    assert!(screen.contains("Terminal too small"), "{screen}");
+}
+
+#[test]
+fn a_narrow_terminal_keeps_everything_on_screen() {
+    let (mut app, _boxes) = demo_app();
+
+    let screen = screen_at(&mut app, 40, 10);
+
+    assert!(screen.contains("Groceries"), "{screen}");
+    assert!(screen.contains("Bread"), "{screen}");
+}
+
+#[test]
+fn long_titles_with_wide_characters_are_clipped() {
+    let (mut app, _boxes) = demo_app();
+    app.tasks[0].task.title = format!("{} Buying milk", "📦".repeat(40));
+
+    let screen = screen_at(&mut app, 60, 12);
+
+    assert!(screen.contains("📦"), "{screen}");
+}
+
+#[test]
+fn thousands_of_tasks_only_paint_the_visible_rows() {
+    let (mut app, _boxes) = demo_app();
+    let base = app.tasks[0].clone();
+    app.tasks = (0..2000)
+        .map(|index| {
+            let mut row = base.clone();
+            row.task.id = tuilist::model::TaskId(format!("bulk-{index}"));
+            row.task.title = format!("Bulk task {index}");
+            row
+        })
+        .collect();
+
+    let screen = screen_at(&mut app, 80, 12);
+
+    assert!(screen.contains("Bulk task 0"), "{screen}");
+    assert!(!screen.contains("Bulk task 1999"), "{screen}");
 }
