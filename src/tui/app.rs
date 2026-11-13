@@ -736,7 +736,7 @@ impl AppState {
                 }
                 Effect::None
             }
-            Pane::Tasks => {
+            Pane::Tasks | Pane::Details => {
                 let len = self.visible_tasks().len();
                 self.selected_task = self
                     .selected_task
@@ -744,7 +744,6 @@ impl AppState {
                     .min(len.saturating_sub(1));
                 Effect::None
             }
-            Pane::Details => Effect::None,
         }
     }
 
@@ -760,7 +759,7 @@ impl AppState {
                 };
                 index.map_or(Effect::None, |index| self.select_list(index))
             }
-            Pane::Tasks => {
+            Pane::Tasks | Pane::Details => {
                 self.selected_task = if top {
                     0
                 } else {
@@ -768,7 +767,6 @@ impl AppState {
                 };
                 Effect::None
             }
-            Pane::Details => Effect::None,
         }
     }
 
@@ -792,6 +790,9 @@ impl AppState {
             self.focus = Pane::Tasks;
         } else if self.focus == Pane::Tasks {
             self.set_group_folded(false);
+        } else if self.focus == Pane::Details {
+            self.select_next();
+            return Effect::ReloadTasks;
         }
         Effect::None
     }

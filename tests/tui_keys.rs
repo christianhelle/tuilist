@@ -218,6 +218,24 @@ fn search_finds_tasks_in_both_accounts_and_escape_restores_them() {
 }
 
 #[test]
+fn the_details_pane_moves_between_tasks_with_the_arrow_keys() {
+    let (mut app, _) = demo_app();
+    app.focus = Pane::Details;
+    let first = app.selected_task;
+
+    assert!(matches!(
+        press(&mut app, KeyCode::Right),
+        Effect::ReloadTasks
+    ));
+    assert_ne!(app.selected_task, first);
+    assert!(matches!(
+        press(&mut app, KeyCode::Left),
+        Effect::ReloadTasks
+    ));
+    assert_eq!(app.selected_task, first);
+}
+
+#[test]
 fn u_confirms_before_replacing_the_binary() {
     let (mut app, _) = demo_app();
     app.update = Some("0.2.0".parse().unwrap());
