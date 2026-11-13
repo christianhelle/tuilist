@@ -21,4 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update checks at start and with `todo check-update`, and installing a release
   with `todo update` or `U`.
 
+### Fixed
+
+- The details pane's arrow, page and jump keys move between tasks.
+
 [Unreleased]: https://github.com/christianhelle/tuilist/commits/main
