@@ -3,3 +3,4 @@
 pub mod core;
 pub mod model;
 pub mod store;
+pub mod tui;
