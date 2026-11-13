@@ -116,11 +116,16 @@ impl TodoBackend for FakeBackend {
         link: Option<&str>,
     ) -> Result<DeltaPage<TaskList, ListId>, BackendError> {
         self.fail("lists_delta")?;
+        let state = self.state.lock().unwrap();
+        if link.is_some() && state.delta_expired {
+            return Err(BackendError::DeltaExpired);
+        }
         let lists = if link.is_some() {
             Vec::new()
         } else {
-            self.state.lock().unwrap().lists.clone()
+            state.lists.clone()
         };
+        drop(state);
         Ok(DeltaPage {
             upserted: lists,
             removed: Vec::new(),
@@ -134,7 +139,7 @@ impl TodoBackend for FakeBackend {
         link: Option<&str>,
     ) -> Result<DeltaPage<Task, TaskId>, BackendError> {
         self.fail("tasks_delta")?;
-        let mut state = self.state.lock().unwrap();
+        let state = self.state.lock().unwrap();
         if link.is_some() && state.delta_expired {
             return Err(BackendError::DeltaExpired);
         }
