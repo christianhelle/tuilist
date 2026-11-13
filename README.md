@@ -61,6 +61,10 @@ Move between panes with `Tab`, move with `j`/`k`, and press `?` for every key.
 
 ## Keys
 
+Press `?` from any pane for this list, wherever you are.
+
+![The keys help](images/help.jpg)
+
 ### Every pane
 
 | Key | What |
@@ -108,6 +112,11 @@ Move between panes with `Tab`, move with `j`/`k`, and press `?` for every key.
 | `Space` | mark and move down |
 | `Ctrl-A` | mark every task shown |
 | `Esc` | clear the marks |
+
+`a` asks for a title in the list shown, and `e` opens the full task form with
+its due date, reminder, star and notes.
+
+![The new task prompt](images/add-task.jpg)
 
 ### Details
 
