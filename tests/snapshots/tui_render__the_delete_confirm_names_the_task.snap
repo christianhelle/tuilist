@@ -1,0 +1,34 @@
+---
+source: tests/tui_render.rs
+expression: screen(&mut app)
+---
+╭ Smart ─────────╮╭ All ──────────────────────────────────────╮╭ Details ──────────────────────────╮
+│  Important (8) ││ ▾ Groceries (4)                           ││1   Buy milk                       │
+│  Planned (27)  ││ > [ ] Buy milk                 1/2 ★ Today││  1 [ ] Not completed  ★ Starred   │
+│  All (35)      ││   [ ] Coffee beans              1/3 Sun 15││  2 Due: Fri 13 Nov 2026           │
+╰────────────────╯│   [ ] Bread                              ↻││  3 List: All                      │
+╭ Lists ─────────╮│   [ ] Oat milk                      Thu 19││  4                                │
+│ ada@outlook.com││ ▾ Work (3)                                ││  5 Steps                          │
+│  Tasks (6)     ││   [ ] Send the status report       ★ Today││  6 [x] Check the fridge           │
+│  Groceries (4) ││   [ ] Review the pull request    Yesterday││  7 [ ] Semi-skimmed               │
+│  Reading (2)   ││   [ ] Plan the next sprint      2/3 Mon 16││  8                                │
+│  Shared (1)  ⇄ ││ ▾ Reading (2)                             ││  9 Notes                          │
+│  Work (3)      ││╭ Delete ────────────────────────────────────────────────────╮                  │
+│  Flagged email │││                                                            │                  │
+│ ada@work.exampl│││  Delete 1 task? This cannot be undone.                     │3 Nov 2026 · Chang│
+│  Tasks (12)    │││                                                            │                  │
+│  Projects (5)  │││  y / Enter delete   Esc or any other key cancel            │                  │
+│  Flagged email │││                                                            │                  │
+│                ││╰────────────────────────────────────────────────────────────╯                  │
+│                ││   [ ] Renew the passport            13 Dec││                                   │
+│                ││   [ ] Pay the rent                ↻ Wed 18││                                   │
+│                ││   [ ] Book the flights              Wed 18││                                   │
+│                ││   [ ] Return the parcel             11 Nov││                                   │
+│                ││ ▾ Flagged email (2)                       ││                                   │
+│                ││   [ ] Email from the bank                ★││                                   │
+│                ││ ▾ Tasks (18)                              ││                                   │
+│                ││   [ ] Send the invoices            ★ Today││                                   │
+│                ││   [ ] Write the quarterly repo… 3/4 Sun 15││                                   │
+│                ││   [ ] Prepare the standup                ↻││                                   │
+╰────────────────╯╰───────────────────────────────────────────╯╰───────────────────────────────────╯
+  ? help · Tab switch pane · a add · x complete · e edit · / search · d delete · q quit

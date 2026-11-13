@@ -1,5 +1,9 @@
 use jiff::Zoned;
-use ratatui::{Terminal, backend::TestBackend};
+use ratatui::{
+    Terminal,
+    backend::TestBackend,
+    crossterm::event::{KeyCode, KeyEvent},
+};
 use tuilist::{
     core::{sync_lists, sync_tasks},
     model::ListId,
@@ -7,6 +11,7 @@ use tuilist::{
     tui::{
         app::{AppState, Pane, View},
         demo,
+        keymap::Keymap,
         taskboxes::TaskBoxes,
         ui,
     },
@@ -146,6 +151,64 @@ fn details_can_sit_below_the_tasks() {
     let (mut app, _boxes) = demo_app();
     app.focus = Pane::Tasks;
     app.details_below = true;
+
+    insta::assert_snapshot!(screen(&mut app));
+}
+
+fn tasks_app() -> (AppState, TaskBoxes) {
+    let (mut app, boxes) = demo_app();
+    app.focus = Pane::Tasks;
+    (app, boxes)
+}
+
+fn press(app: &mut AppState, code: KeyCode) {
+    app.on_key(KeyEvent::from(code), &mut Keymap::default());
+}
+
+#[test]
+fn the_delete_confirm_names_the_task() {
+    let (mut app, _boxes) = tasks_app();
+    press(&mut app, KeyCode::Char('d'));
+
+    insta::assert_snapshot!(screen(&mut app));
+}
+
+#[test]
+fn the_move_dialog_offers_each_list() {
+    let (mut app, _boxes) = tasks_app();
+    press(&mut app, KeyCode::Char('m'));
+
+    insta::assert_snapshot!(screen(&mut app));
+}
+
+#[test]
+fn the_due_prompt_shows_the_date_formats() {
+    let (mut app, _boxes) = tasks_app();
+    press(&mut app, KeyCode::Char('T'));
+
+    insta::assert_snapshot!(screen(&mut app));
+}
+
+#[test]
+fn the_new_task_prompt_names_the_list() {
+    let (mut app, _boxes) = tasks_app();
+    press(&mut app, KeyCode::Char('a'));
+
+    insta::assert_snapshot!(screen(&mut app));
+}
+
+#[test]
+fn the_task_form_shows_every_field() {
+    let (mut app, _boxes) = tasks_app();
+    press(&mut app, KeyCode::Char('e'));
+
+    insta::assert_snapshot!(screen(&mut app));
+}
+
+#[test]
+fn the_add_step_prompt_names_the_task() {
+    let (mut app, _boxes) = tasks_app();
+    press(&mut app, KeyCode::Char('s'));
 
     insta::assert_snapshot!(screen(&mut app));
 }
