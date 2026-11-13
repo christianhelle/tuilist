@@ -23,7 +23,7 @@ use tuilist::{
         DeviceCode, KeyringStore, MemoryStore, OAuthClient, OAuthConfig, SecretStore, TokenProvider,
     },
     core::{fake::FakeBackend, run_engine, sync_lists, sync_tasks},
-    graph::{GRAPH_V1, GraphClient},
+    graph::{GRAPH_V1, GraphBackend, GraphClient},
     store::Store,
     tui::{
         app::AppState, demo, keymap::Keymap, run_loop::on_terminal_event, session::Session,
@@ -87,6 +87,8 @@ enum CliCommand {
     },
     /// List the signed-in accounts.
     Accounts,
+    /// Fetch every account's latest lists and tasks, then exit.
+    Sync,
 }
 
 fn main() -> Result<()> {
@@ -105,8 +107,9 @@ fn main() -> Result<()> {
             }
             Ok(())
         }
+        Some(CliCommand::Sync) => runtime.block_on(sync()),
         None if cli.demo => run_demo(&runtime),
-        None => bail!("Not signed in. Run todo login, or todo --demo to look around."),
+        None => run_live(&runtime, &cli),
     }
 }
 
@@ -136,8 +139,78 @@ fn run_demo(runtime: &tokio::runtime::Runtime) -> Result<()> {
         session.apply(&mut app);
         boxes.load(&mut app)?;
     }
-    with_terminal(|terminal| drive(terminal, &mut app, &mut boxes))?;
+    with_terminal(|terminal| drive(terminal, &mut app, &mut boxes, None))?;
     Session::of(&app).save()
+}
+
+/// Opens the cache of every signed-in account and runs the UI over them.
+fn run_live(runtime: &tokio::runtime::Runtime, cli: &Cli) -> Result<()> {
+    let accounts = signed_in()?;
+    if accounts.0.is_empty() {
+        bail!("Not signed in. Run todo login, or todo --demo to look around.");
+    }
+    let registry = registry()?;
+    let mut displays = Vec::new();
+    let mut engines = Vec::new();
+    for account in accounts.0 {
+        let path = registry.cache_path(&account.address)?;
+        let engine_store = Store::open(&path)?;
+        let display = Store::open(&path)?;
+        let backend = backend_for(&account)?;
+        let (commands, receiver) = mpsc::unbounded_channel();
+        let (events, receiver_events) = mpsc::channel(64);
+        runtime.spawn(run_engine(backend, engine_store, receiver, events));
+        displays.push((account.address, display));
+        engines.push((commands, receiver_events));
+    }
+    let mut app = AppState {
+        clock: Some(Zoned::now()),
+        ..AppState::default()
+    };
+    let mut boxes = TaskBoxes::new(displays);
+    for (account, (commands, events)) in engines.into_iter().enumerate() {
+        boxes.attach(account, commands, events);
+    }
+    boxes.load(&mut app)?;
+    if let Some(session) = Session::load() {
+        session.apply(&mut app);
+        boxes.load(&mut app)?;
+    }
+    if let Err(error) = boxes.sync_all() {
+        app.status_error(format!("{error}"));
+    }
+    let every = (cli.sync_every > 0).then(|| Duration::from_secs(cli.sync_every));
+    with_terminal(|terminal| drive(terminal, &mut app, &mut boxes, every))?;
+    Session::of(&app).save()
+}
+
+/// Fetches the latest lists and tasks for every account, without the UI.
+async fn sync() -> Result<()> {
+    let accounts = signed_in()?;
+    if accounts.0.is_empty() {
+        bail!("Not signed in. Run todo login first.");
+    }
+    let registry = registry()?;
+    for account in accounts.0 {
+        let path = registry.cache_path(&account.address)?;
+        let mut store = Store::open(&path)?;
+        let backend = backend_for(&account)?;
+        sync_lists(&backend, &mut store).await?;
+        for list in store.lists()? {
+            sync_tasks(&backend, &mut store, &list.id).await?;
+        }
+        println!("Synced {}.", account.address);
+    }
+    Ok(())
+}
+
+fn backend_for(account: &Account) -> Result<GraphBackend<Arc<TokenProvider>>> {
+    let secrets = Arc::new(KeyringStore::new(&account.address)?);
+    let tokens = Arc::new(TokenProvider::new(
+        oauth(&account.tenant, &account.client_id),
+        secrets,
+    ));
+    Ok(GraphBackend::new(GraphClient::new(GRAPH_V1, tokens)))
 }
 
 fn client_id(cli: &Cli) -> Result<String> {
@@ -273,9 +346,21 @@ fn with_terminal<T>(f: impl FnOnce(&mut DefaultTerminal) -> Result<T>) -> Result
     result
 }
 
-fn drive(terminal: &mut DefaultTerminal, app: &mut AppState, boxes: &mut TaskBoxes) -> Result<()> {
+fn drive(
+    terminal: &mut DefaultTerminal,
+    app: &mut AppState,
+    boxes: &mut TaskBoxes,
+    every: Option<Duration>,
+) -> Result<()> {
     let mut keymap = Keymap::default();
+    let mut last_sync = Instant::now();
     while !app.should_quit {
+        if let Some(every) = every
+            && last_sync.elapsed() >= every
+        {
+            let _ = boxes.sync_all();
+            last_sync = Instant::now();
+        }
         boxes.poll(app);
         app.expire_status(Instant::now());
         terminal.draw(|frame| ui::draw(frame, app))?;
