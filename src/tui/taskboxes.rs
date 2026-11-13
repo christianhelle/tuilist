@@ -4,6 +4,7 @@
 use std::collections::HashMap;
 
 use anyhow::Result;
+use tokio::sync::mpsc::{Receiver, UnboundedSender};
 
 use crate::{
     core::Command,
@@ -15,6 +16,8 @@ use crate::{
 pub struct TaskBox {
     pub address: String,
     pub store: Store,
+    commands: Option<UnboundedSender<Command>>,
+    events: Option<Receiver<Event>>,
 }
 
 pub struct TaskBoxes {
@@ -26,8 +29,41 @@ impl TaskBoxes {
         Self {
             boxes: accounts
                 .into_iter()
-                .map(|(address, store)| TaskBox { address, store })
+                .map(|(address, store)| TaskBox {
+                    address,
+                    store,
+                    commands: None,
+                    events: None,
+                })
                 .collect(),
+        }
+    }
+
+    /// Connects an account to its engine, so writes go through it.
+    pub fn attach(
+        &mut self,
+        account: usize,
+        commands: UnboundedSender<Command>,
+        events: Receiver<Event>,
+    ) {
+        if let Some(task_box) = self.boxes.get_mut(account) {
+            task_box.commands = Some(commands);
+            task_box.events = Some(events);
+        }
+    }
+
+    /// Shows whatever the engines have reported since the last draw.
+    pub fn poll(&mut self, app: &mut AppState) {
+        let mut events = Vec::new();
+        for (index, task_box) in self.boxes.iter_mut().enumerate() {
+            if let Some(events_in) = &mut task_box.events {
+                while let Ok(event) = events_in.try_recv() {
+                    events.push((index, event));
+                }
+            }
+        }
+        for (account, event) in events {
+            self.on_event(app, account, event);
         }
     }
 
@@ -152,14 +188,33 @@ impl TaskBoxes {
                 }
                 result
             }
-            Effect::SendAll(_) | Effect::Send { .. } => {
-                app.status_error("This demo is read-only");
-                Ok(())
+            Effect::Send { account, command } => self.send(account, command),
+            Effect::SendAll(command) => {
+                let mut result = Ok(());
+                for account in 0..self.boxes.len() {
+                    if let Err(error) = self.send(account, command.clone()) {
+                        result = Err(error);
+                        break;
+                    }
+                }
+                result
             }
         };
         if let Err(error) = result {
             app.status_error(format!("{error}"));
         }
+    }
+
+    fn send(&self, account: usize, command: Command) -> Result<()> {
+        let Some(task_box) = self.boxes.get(account) else {
+            anyhow::bail!("No account {account}");
+        };
+        let Some(commands) = &task_box.commands else {
+            anyhow::bail!("This demo is read-only");
+        };
+        commands
+            .send(command)
+            .map_err(|_| anyhow::anyhow!("The account's engine has stopped"))
     }
 
     /// Shows what an engine reported, once the accounts are live.
