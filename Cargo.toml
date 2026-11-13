@@ -1,0 +1,22 @@
+[package]
+name = "tuilist"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+description = "A terminal client for Microsoft To Do, with vim-style keys"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/christianhelle/tuilist"
+keywords = ["todo", "tasks", "microsoft-to-do", "tui", "terminal"]
+categories = ["command-line-utilities"]
+exclude = [".github/", ".gitattributes", "images/"]
+
+[[bin]]
+name = "todo"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1.0.104"
+clap = { version = "4.6.7", features = ["derive", "env"] }
+
+[dev-dependencies]
