@@ -7,4 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- The terminal UI: lists, tasks and details panes, vim keys, dialogs, and a
+  `--demo` showcase that runs without a Microsoft account.
+
 [Unreleased]: https://github.com/christianhelle/tuilist/commits/main

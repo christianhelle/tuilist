@@ -1,4 +1,26 @@
+use std::{
+    io,
+    time::{Duration, Instant},
+};
+
+use anyhow::Result;
 use clap::Parser;
+use jiff::Zoned;
+use ratatui::{
+    DefaultTerminal,
+    crossterm::{
+        event::{self, DisableMouseCapture, EnableMouseCapture},
+        execute,
+    },
+    layout::Rect,
+};
+use tuilist::{
+    core::{sync_lists, sync_tasks},
+    store::Store,
+    tui::{
+        app::AppState, demo, keymap::Keymap, run_loop::on_terminal_event, taskboxes::TaskBoxes, ui,
+    },
+};
 
 /// tuilist's own Entra ID app registration (a public client; not a secret).
 const DEFAULT_CLIENT_ID: &str = "5de297ab-80a5-4cfc-bdea-38e33b917993";
@@ -38,9 +60,69 @@ struct Cli {
     no_update_check: bool,
 }
 
-fn main() -> anyhow::Result<()> {
-    let _cli = Cli::parse();
-    anyhow::bail!("Not signed in. Run todo login, or todo --demo to look around.")
+fn main() -> Result<()> {
+    let cli = Cli::parse();
+    if !cli.demo {
+        anyhow::bail!("Not signed in. Run todo login, or todo --demo to look around.")
+    }
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()?;
+    let accounts = runtime.block_on(seed_demo())?;
+    let mut app = AppState {
+        clock: Some(Zoned::now()),
+        ..AppState::default()
+    };
+    let mut boxes = TaskBoxes::new(accounts);
+    boxes.load(&mut app)?;
+    with_terminal(|terminal| drive(terminal, &mut app, &mut boxes))
+}
+
+async fn seed_demo() -> Result<Vec<(String, Store)>> {
+    let mut accounts = Vec::new();
+    for (address, backend) in demo::accounts() {
+        let mut store = Store::open_in_memory()?;
+        sync_lists(&backend, &mut store).await?;
+        let lists = store.lists()?;
+        for list in &lists {
+            sync_tasks(&backend, &mut store, &list.id).await?;
+        }
+        for list in &lists {
+            for task in store.tasks_in(&list.id)? {
+                let steps = backend.steps_of(&task.id);
+                if !steps.is_empty() {
+                    store.put_steps(&task.id, &steps)?;
+                }
+            }
+        }
+        accounts.push((address, store));
+    }
+    Ok(accounts)
+}
+
+fn with_terminal<T>(f: impl FnOnce(&mut DefaultTerminal) -> Result<T>) -> Result<T> {
+    let mut terminal = ratatui::init();
+    let result = execute!(io::stdout(), EnableMouseCapture)
+        .map_err(anyhow::Error::from)
+        .and_then(|()| f(&mut terminal));
+    let _ = execute!(io::stdout(), DisableMouseCapture);
+    ratatui::restore();
+    result
+}
+
+fn drive(terminal: &mut DefaultTerminal, app: &mut AppState, boxes: &mut TaskBoxes) -> Result<()> {
+    let mut keymap = Keymap::default();
+    while !app.should_quit {
+        app.expire_status(Instant::now());
+        terminal.draw(|frame| ui::draw(frame, app))?;
+        if event::poll(Duration::from_millis(100))? {
+            let size = terminal.size()?;
+            let area = Rect::new(0, 0, size.width, size.height);
+            on_terminal_event(app, boxes, &mut keymap, area, event::read()?)?;
+            app.clock = Some(Zoned::now());
+        }
+    }
+    Ok(())
 }
 
 #[cfg(test)]
