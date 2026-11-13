@@ -182,27 +182,28 @@ impl TaskBoxes {
                 command: Command::LoadSteps { task, .. },
             } => self.load_steps(app, account, &task),
             Effect::SendAll(Command::SyncAll) => {
-                let result = self.load(app);
-                if result.is_ok() {
-                    app.status_info("Synced");
-                }
-                result
+                let sent = self.sync_all();
+                let loaded = self.load(app);
+                sent.and(loaded)
             }
             Effect::Send { account, command } => self.send(account, command),
-            Effect::SendAll(command) => {
-                let mut result = Ok(());
-                for account in 0..self.boxes.len() {
-                    if let Err(error) = self.send(account, command.clone()) {
-                        result = Err(error);
-                        break;
-                    }
-                }
-                result
-            }
+            Effect::SendAll(command) => self.broadcast(command),
         };
         if let Err(error) = result {
             app.status_error(format!("{error}"));
         }
+    }
+
+    /// Asks every account's engine to sync, for the timer and `F5`.
+    pub fn sync_all(&self) -> Result<()> {
+        self.broadcast(Command::SyncAll)
+    }
+
+    fn broadcast(&self, command: Command) -> Result<()> {
+        for account in 0..self.boxes.len() {
+            self.send(account, command.clone())?;
+        }
+        Ok(())
     }
 
     fn send(&self, account: usize, command: Command) -> Result<()> {
@@ -221,7 +222,9 @@ impl TaskBoxes {
     pub fn on_event(&mut self, app: &mut AppState, _account: usize, event: Event) {
         match event {
             Event::Failed { what, reason } => app.status_error(format!("{what}: {reason}")),
-            Event::SignedOut => app.status_error("Sign-in expired. Press M to sign in again"),
+            Event::SignedOut => {
+                app.status_error("Sign-in expired. Run `todo login`, then press F5")
+            }
             Event::ListsSynced | Event::ListSynced(_) | Event::SyncFinished => {
                 app.status_info("Synced");
                 let _ = self.load(app);
