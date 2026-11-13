@@ -22,6 +22,7 @@ pub struct TaskBox {
 
 pub struct TaskBoxes {
     pub boxes: Vec<TaskBox>,
+    install: Option<UnboundedSender<()>>,
 }
 
 impl TaskBoxes {
@@ -36,7 +37,13 @@ impl TaskBoxes {
                     events: None,
                 })
                 .collect(),
+            install: None,
         }
+    }
+
+    /// Connects the update installer the UI asks to replace this binary.
+    pub fn attach_installer(&mut self, install: UnboundedSender<()>) {
+        self.install = Some(install);
     }
 
     /// Connects an account to its engine, so writes go through it.
@@ -175,6 +182,15 @@ impl TaskBoxes {
     pub fn apply(&mut self, app: &mut AppState, effect: Effect) {
         let result = match effect {
             Effect::None | Effect::Quit | Effect::Copy(_) => Ok(()),
+            Effect::InstallUpdate => {
+                let Some(install) = &self.install else {
+                    app.status_error("Run `todo update` to install it");
+                    return;
+                };
+                install
+                    .send(())
+                    .map_err(|_| anyhow::anyhow!("The update installer has stopped"))
+            }
             Effect::ReloadLists => self.load(app),
             Effect::ReloadTasks => self.load_tasks(app),
             Effect::Send {

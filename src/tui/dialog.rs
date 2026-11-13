@@ -44,6 +44,7 @@ pub enum ConfirmAction {
         step: StepId,
     },
     DiscardForm,
+    Update,
 }
 
 /// What a typed name is for.

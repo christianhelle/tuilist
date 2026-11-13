@@ -28,6 +28,8 @@ pub fn sections(app: &AppState) -> Vec<(&'static str, Vec<Row>)> {
                 row("b", "hide the lists"),
                 row("L", "details below the tasks"),
                 row("F5  Ctrl-R", "sync now"),
+                row("M", "accounts"),
+                row("U", "update TUIList"),
                 row("?", "these keys"),
                 row("q  Ctrl-C", "quit"),
             ],

@@ -216,3 +216,21 @@ fn search_finds_tasks_in_both_accounts_and_escape_restores_them() {
     assert!(app.search.is_none());
     assert_eq!(app.tasks.len(), all);
 }
+
+#[test]
+fn u_confirms_before_replacing_the_binary() {
+    let (mut app, _) = demo_app();
+    app.update = Some("0.2.0".parse().unwrap());
+
+    assert!(matches!(press(&mut app, KeyCode::Char('U')), Effect::None));
+    assert!(matches!(
+        app.dialog,
+        Some(Dialog::Confirm(ref confirm))
+            if confirm.action == tuilist::tui::dialog::ConfirmAction::Update
+    ));
+
+    assert!(matches!(
+        press(&mut app, KeyCode::Char('y')),
+        Effect::InstallUpdate
+    ));
+}

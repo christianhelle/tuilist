@@ -7,7 +7,7 @@ use std::{
 
 use anyhow::{Context, Result, bail};
 use clap::{Parser, Subcommand};
-use jiff::Zoned;
+use jiff::{Timestamp, Zoned};
 use ratatui::{
     DefaultTerminal,
     crossterm::{
@@ -20,7 +20,8 @@ use tokio::sync::mpsc;
 use tuilist::{
     accounts::{Account, Accounts, Registry},
     auth::{
-        DeviceCode, KeyringStore, MemoryStore, OAuthClient, OAuthConfig, SecretStore, TokenProvider,
+        DeviceCode, KeyringStore, MemoryStore, OAuthClient, OAuthConfig, SecretStore,
+        TokenProvider, http_client,
     },
     core::{fake::FakeBackend, run_engine, sync_lists, sync_tasks},
     graph::{GRAPH_V1, GraphBackend, GraphClient},
@@ -29,6 +30,7 @@ use tuilist::{
         app::AppState, demo, keymap::Keymap, run_loop::on_terminal_event, session::Session,
         taskboxes::TaskBoxes, ui,
     },
+    update,
 };
 
 /// Delegated Graph scopes for reading and writing tasks.
@@ -89,6 +91,10 @@ enum CliCommand {
     Accounts,
     /// Fetch every account's latest lists and tasks, then exit.
     Sync,
+    /// Ask GitHub whether a newer TUIList has been released.
+    CheckUpdate,
+    /// Replace this TUIList with the latest release.
+    Update,
 }
 
 fn main() -> Result<()> {
@@ -108,12 +114,14 @@ fn main() -> Result<()> {
             Ok(())
         }
         Some(CliCommand::Sync) => runtime.block_on(sync()),
-        None if cli.demo => run_demo(&runtime),
+        Some(CliCommand::CheckUpdate) => runtime.block_on(check_update()),
+        Some(CliCommand::Update) => runtime.block_on(install_update()),
+        None if cli.demo => run_demo(&runtime, &cli),
         None => run_live(&runtime, &cli),
     }
 }
 
-fn run_demo(runtime: &tokio::runtime::Runtime) -> Result<()> {
+fn run_demo(runtime: &tokio::runtime::Runtime, cli: &Cli) -> Result<()> {
     let dir = tempfile::tempdir()?;
     let seeded = runtime.block_on(seed_demo(dir.path()))?;
     let mut accounts = Vec::new();
@@ -139,7 +147,10 @@ fn run_demo(runtime: &tokio::runtime::Runtime) -> Result<()> {
         session.apply(&mut app);
         boxes.load(&mut app)?;
     }
-    with_terminal(|terminal| drive(terminal, &mut app, &mut boxes, None))?;
+    let (update_tx, mut updates) = mpsc::channel(4);
+    watch_for_update(runtime, cli, update_tx.clone());
+    boxes.attach_installer(install_on_request(runtime, update_tx));
+    with_terminal(|terminal| drive(terminal, &mut app, &mut boxes, None, Some(&mut updates)))?;
     Session::of(&app).save()
 }
 
@@ -180,7 +191,10 @@ fn run_live(runtime: &tokio::runtime::Runtime, cli: &Cli) -> Result<()> {
         app.status_error(format!("{error}"));
     }
     let every = (cli.sync_every > 0).then(|| Duration::from_secs(cli.sync_every));
-    with_terminal(|terminal| drive(terminal, &mut app, &mut boxes, every))?;
+    let (update_tx, mut updates) = mpsc::channel(4);
+    watch_for_update(runtime, cli, update_tx.clone());
+    boxes.attach_installer(install_on_request(runtime, update_tx));
+    with_terminal(|terminal| drive(terminal, &mut app, &mut boxes, every, Some(&mut updates)))?;
     Session::of(&app).save()
 }
 
@@ -202,6 +216,106 @@ async fn sync() -> Result<()> {
         println!("Synced {}.", account.address);
     }
     Ok(())
+}
+
+/// What a background update check or install found.
+enum UpdateNews {
+    Available(semver::Version),
+    Installed(semver::Version),
+    UpToDate(semver::Version),
+    Failed(String),
+}
+
+/// Looks for a newer TUIList in the background, unless told not to.
+fn watch_for_update(runtime: &tokio::runtime::Runtime, cli: &Cli, news: mpsc::Sender<UpdateNews>) {
+    if cli.no_update_check {
+        return;
+    }
+    let Ok(path) = update_check_path() else {
+        return;
+    };
+    runtime.spawn(async move {
+        let available = update::available(
+            &http_client(),
+            update::GITHUB_API,
+            &path,
+            &update::current(),
+            Timestamp::now(),
+        )
+        .await;
+        if let Some(version) = available {
+            let _ = news.send(UpdateNews::Available(version)).await;
+        }
+    });
+}
+
+/// Installs the latest release each time the UI asks, and says how it went.
+fn install_on_request(
+    runtime: &tokio::runtime::Runtime,
+    news: mpsc::Sender<UpdateNews>,
+) -> mpsc::UnboundedSender<()> {
+    let (installer, mut asked) = mpsc::unbounded_channel();
+    runtime.spawn(async move {
+        while asked.recv().await.is_some() {
+            let outcome = match update_check_path() {
+                Ok(path) => update::update_running(&http_client(), update::GITHUB_API, &path).await,
+                Err(error) => Err(error),
+            };
+            let said = match outcome {
+                Ok(update::Outcome::Installed(version)) => UpdateNews::Installed(version),
+                Ok(update::Outcome::UpToDate(version)) => UpdateNews::UpToDate(version),
+                Err(error) => UpdateNews::Failed(format!("{error:#}")),
+            };
+            if news.send(said).await.is_err() {
+                break;
+            }
+        }
+    });
+    installer
+}
+
+async fn check_update() -> Result<()> {
+    let release = update::check(
+        &http_client(),
+        update::GITHUB_API,
+        &update_check_path()?,
+        Timestamp::now(),
+    )
+    .await
+    .context("could not check for updates")?;
+    let current = update::current();
+    if update::newer(&current, &release.version) {
+        println!(
+            "TUIList {} is available (you have {current}): {}",
+            release.version, release.url
+        );
+    } else {
+        println!("TUIList {current} is up to date.");
+    }
+    Ok(())
+}
+
+async fn install_update() -> Result<()> {
+    match update::update_running(&http_client(), update::GITHUB_API, &update_check_path()?).await? {
+        update::Outcome::Installed(version) => {
+            println!("TUIList {version} is installed; it runs from the next start.");
+        }
+        update::Outcome::UpToDate(version) => {
+            println!("TUIList {version} is up to date.");
+        }
+    }
+    Ok(())
+}
+
+fn update_check_path() -> Result<PathBuf> {
+    Ok(cache_dir()?.join("update-check.json"))
+}
+
+fn cache_dir() -> Result<PathBuf> {
+    let dirs = directories::ProjectDirs::from("", "", "tuilist")
+        .context("no home directory to keep tuilist's cache in")?;
+    std::fs::create_dir_all(dirs.cache_dir())?;
+    Ok(dirs.cache_dir().to_owned())
 }
 
 fn backend_for(account: &Account) -> Result<GraphBackend<Arc<TokenProvider>>> {
@@ -351,6 +465,7 @@ fn drive(
     app: &mut AppState,
     boxes: &mut TaskBoxes,
     every: Option<Duration>,
+    mut updates: Option<&mut mpsc::Receiver<UpdateNews>>,
 ) -> Result<()> {
     let mut keymap = Keymap::default();
     let mut last_sync = Instant::now();
@@ -360,6 +475,29 @@ fn drive(
         {
             let _ = boxes.sync_all();
             last_sync = Instant::now();
+        }
+        if let Some(updates) = updates.as_mut() {
+            while let Ok(news) = updates.try_recv() {
+                match news {
+                    UpdateNews::Available(version) => {
+                        app.update = Some(version.clone());
+                        app.status_info(format!(
+                            "TUIList {version} is available. Press U to update."
+                        ));
+                    }
+                    UpdateNews::Installed(version) => {
+                        app.update = None;
+                        app.installed = Some(version.clone());
+                        app.status_info(format!(
+                            "TUIList {version} is installed; it runs from the next start."
+                        ));
+                    }
+                    UpdateNews::UpToDate(version) => {
+                        app.status_info(format!("TUIList {version} is up to date."));
+                    }
+                    UpdateNews::Failed(reason) => app.status_error(reason),
+                }
+            }
         }
         boxes.poll(app);
         app.expire_status(Instant::now());

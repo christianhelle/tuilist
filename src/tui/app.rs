@@ -134,6 +134,7 @@ pub enum Effect {
     Send { account: usize, command: Command },
     SendAll(Command),
     Copy(String),
+    InstallUpdate,
     Quit,
 }
 
@@ -632,10 +633,21 @@ impl AppState {
                 self.search = Some(crate::tui::search::Search::default());
                 Effect::None
             }
-            Update => {
-                self.status_info("Checking for a newer TUIList…");
-                Effect::None
-            }
+            Update => match self.update.clone() {
+                Some(version) => {
+                    self.dialog = Some(Dialog::Confirm(crate::tui::dialog::Confirm {
+                        prompt: format!(
+                            "Update TUIList to {version}? It runs from the next start."
+                        ),
+                        action: ConfirmAction::Update,
+                    }));
+                    Effect::None
+                }
+                None => {
+                    self.status_info("TUIList is up to date.");
+                    Effect::None
+                }
+            },
             ManageAccounts => {
                 self.dialog = Some(Dialog::Accounts(crate::tui::account_manager::Accounts::of(
                     &self.accounts,
@@ -1424,6 +1436,7 @@ impl AppState {
                 self.form = None;
                 Effect::None
             }
+            ConfirmAction::Update => Effect::InstallUpdate,
         }
     }
 
