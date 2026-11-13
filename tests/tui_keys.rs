@@ -185,3 +185,34 @@ fn t_and_s_open_prompts_for_a_date_and_a_step() {
     assert!(matches!(press(&mut app, KeyCode::Char('s')), Effect::None));
     assert!(matches!(app.dialog, Some(Dialog::Name(_))));
 }
+
+#[test]
+fn search_finds_tasks_in_both_accounts_and_escape_restores_them() {
+    let (mut app, mut boxes) = demo_app();
+    let all = app.tasks.len();
+
+    press(&mut app, KeyCode::Char('/'));
+    for c in "report".chars() {
+        let effect = press(&mut app, KeyCode::Char(c));
+        boxes.apply(&mut app, effect);
+    }
+
+    assert!(!app.tasks.is_empty());
+    assert!(app.tasks.len() < all);
+    assert!(
+        app.tasks
+            .iter()
+            .all(|row| row.task.title.to_lowercase().contains("report"))
+    );
+    assert!(app.tasks.iter().any(|row| row.account == 0));
+    assert!(app.tasks.iter().any(|row| row.account == 1));
+
+    press(&mut app, KeyCode::Enter);
+    assert_eq!(app.focus, Pane::Tasks);
+    assert!(app.search.as_ref().is_some_and(|search| !search.typing()));
+
+    let effect = press(&mut app, KeyCode::Esc);
+    boxes.apply(&mut app, effect);
+    assert!(app.search.is_none());
+    assert_eq!(app.tasks.len(), all);
+}
