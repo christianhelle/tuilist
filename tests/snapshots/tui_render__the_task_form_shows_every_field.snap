@@ -2,33 +2,33 @@
 source: tests/tui_render.rs
 expression: screen(&mut app)
 ---
-╭ Smart ───────────────╮┏ Edit task ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-│  Important (8)       │┃  Title:   Buy milk                                                       ┃
-│  Planned (27)        │┃  Due:     2026-11-13                                                     ┃
-│  All (35)            │┃  Remind:                                                                 ┃
-╰──────────────────────╯┃  Starred: [x]                                                            ┃
-╭ Lists ───────────────╮┃  ── Notes                                                                ┃
-│ ada@outlook.com      │┃                                                                          ┃
-│  Tasks (6)           │┃1   Semi-skimmed                                                          ┃
-│  Groceries (4)       │┃                                                                          ┃
-│  Reading (2)         │┃                                                                          ┃
-│  Shared (1)  ⇄       │┃                                                                          ┃
-│  Work (3)            │┃                                                                          ┃
-│  Flagged email (1)   │┃                                                                          ┃
-│ ada@work.example     │┃                                                                          ┃
-│  Tasks (12)          │┃                                                                          ┃
-│  Projects (5)        │┃                                                                          ┃
-│  Flagged email (1)   │┃                                                                          ┃
-│                      │┃                                                                          ┃
-│                      │┃                                                                          ┃
-│                      │┃                                                                          ┃
-│                      │┃                                                                          ┃
-│                      │┃                                                                          ┃
-│                      │┃                                                                          ┃
-│                      │┃                                                                          ┃
-│                      │┃                                                                          ┃
-│                      │┃                                                                          ┃
-│                      │┃                                                                          ┃
-│                      │┃  Tab next · Ctrl-S save · Esc close                                      ┃
-╰──────────────────────╯┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+╭ Smart ─────────────────────╮┏ Edit task ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+│  Important (8)             │┃  Title:   Buy milk                                                 ┃
+│  Planned (27)              │┃  Due:     2026-11-13                                               ┃
+│  All (35)                  │┃  Remind:                                                           ┃
+╰────────────────────────────╯┃  Starred: [x]                                                      ┃
+╭ Lists ─────────────────────╮┃  ── Notes                                                          ┃
+│ ada@outlook.com            │┃                                                                    ┃
+│  Tasks (6)                 │┃1   Semi-skimmed                                                    ┃
+│  Groceries (4)             │┃                                                                    ┃
+│  Reading (2)               │┃                                                                    ┃
+│  Shared (1)  ⇄             │┃                                                                    ┃
+│  Work (3)                  │┃                                                                    ┃
+│  Flagged email (1)         │┃                                                                    ┃
+│ ada@work.example           │┃                                                                    ┃
+│  Tasks (12)                │┃                                                                    ┃
+│  Projects (5)              │┃                                                                    ┃
+│  Flagged email (1)         │┃                                                                    ┃
+│                            │┃                                                                    ┃
+│                            │┃                                                                    ┃
+│                            │┃                                                                    ┃
+│                            │┃                                                                    ┃
+│                            │┃                                                                    ┃
+│                            │┃                                                                    ┃
+│                            │┃                                                                    ┃
+│                            │┃                                                                    ┃
+│                            │┃                                                                    ┃
+│                            │┃                                                                    ┃
+│                            │┃  Tab next · Ctrl-S save · Esc close                                ┃
+╰────────────────────────────╯┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
  NORMAL   ? help · Tab switch pane · a add · x complete · e edit · / search · d delete · q quit

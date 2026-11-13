@@ -18,7 +18,7 @@ use crate::tui::{
 };
 
 /// Wide enough for account addresses and ordinary list names.
-const LISTS_WIDTH: u16 = 24;
+const LISTS_WIDTH: u16 = 30;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Mouse {

@@ -2,33 +2,33 @@
 source: tests/tui_render.rs
 expression: screen(&mut app)
 ---
-╭ Smart ───────────────╮╭ All ─────────────────────────────────────────────────────────────────────╮
-│  Important (8)       ││ ▾ Groceries (4)                                                          │
-│  Planned (27)        ││ > [ ] Buy milk                                                1/2 ★ Today│
-│  All (35)            ││   [ ] Coffee beans                                             1/3 Sun 15│
-╰──────────────────────╯│   [ ] Bread                                                             ↻│
-╭ Lists ───────────────╮│   [ ] Oat milk                                                     Thu 19│
-│ ada@outlook.com      ││ ▾ Work (3)                                                               │
-│  Tasks (6)           ││   [ ] Send the status report                                      ★ Today│
-│  Groceries (4)       ││   [ ] Review the pull request                                   Yesterday│
-│  Reading (2)         ││   [ ] Plan the next sprint                                     2/3 Mon 16│
-│  Shared (1)  ⇄       ││ ▾ Reading (2)                                                            │
-│  Work (3)            ││   [ ] Read Dune                                                          │
-│  Flagged email (1)   ││   [ ] Read the saved articles                                      23 Nov│
-│ ada@work.example     ││ ▾ Shared (1)                                                             │
-│  Tasks (12)          ││   [ ] Pack the boxes                                         0/1 Tomorrow│
-│  Projects (5)        ││ ▾ Tasks (18)                                                             │
-│  Flagged email (1)   │╰──────────────────────────────────────────────────────────────────────────╯
-│                      │╭ Details ─────────────────────────────────────────────────────────────────╮
-│                      ││1   Buy milk                                                              │
-│                      ││  1 [ ] Not completed  ★ Starred                                          │
-│                      ││  2 Due: Fri 13 Nov 2026                                                  │
-│                      ││  3 List: All                                                             │
-│                      ││  4                                                                       │
-│                      ││  5 Steps                                                                 │
-│                      ││  6 [x] Check the fridge                                                  │
-│                      ││  7 [ ] Semi-skimmed                                                      │
-│                      ││  8                                                                       │
-│                      ││  9 Notes                                                                 │
-╰──────────────────────╯╰──────────────────────────────────────────────────────────────────────────╯
+╭ Smart ─────────────────────╮╭ All ───────────────────────────────────────────────────────────────╮
+│  Important (8)             ││ ▾ Groceries (4)                                                    │
+│  Planned (27)              ││ > [ ] Buy milk                                          1/2 ★ Today│
+│  All (35)                  ││   [ ] Coffee beans                                       1/3 Sun 15│
+╰────────────────────────────╯│   [ ] Bread                                                       ↻│
+╭ Lists ─────────────────────╮│   [ ] Oat milk                                               Thu 19│
+│ ada@outlook.com            ││ ▾ Work (3)                                                         │
+│  Tasks (6)                 ││   [ ] Send the status report                                ★ Today│
+│  Groceries (4)             ││   [ ] Review the pull request                             Yesterday│
+│  Reading (2)               ││   [ ] Plan the next sprint                               2/3 Mon 16│
+│  Shared (1)  ⇄             ││ ▾ Reading (2)                                                      │
+│  Work (3)                  ││   [ ] Read Dune                                                    │
+│  Flagged email (1)         ││   [ ] Read the saved articles                                23 Nov│
+│ ada@work.example           ││ ▾ Shared (1)                                                       │
+│  Tasks (12)                ││   [ ] Pack the boxes                                   0/1 Tomorrow│
+│  Projects (5)              ││ ▾ Tasks (18)                                                       │
+│  Flagged email (1)         │╰────────────────────────────────────────────────────────────────────╯
+│                            │╭ Details ───────────────────────────────────────────────────────────╮
+│                            ││1   Buy milk                                                        │
+│                            ││  1 [ ] Not completed  ★ Starred                                    │
+│                            ││  2 Due: Fri 13 Nov 2026                                            │
+│                            ││  3 List: All                                                       │
+│                            ││  4                                                                 │
+│                            ││  5 Steps                                                           │
+│                            ││  6 [x] Check the fridge                                            │
+│                            ││  7 [ ] Semi-skimmed                                                │
+│                            ││  8                                                                 │
+│                            ││  9 Notes                                                           │
+╰────────────────────────────╯╰────────────────────────────────────────────────────────────────────╯
   ? help · Tab switch pane · a add · x complete · e edit · / search · d delete · q quit

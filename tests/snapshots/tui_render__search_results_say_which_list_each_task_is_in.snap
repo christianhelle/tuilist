@@ -2,33 +2,33 @@
 source: tests/tui_render.rs
 expression: screen(&mut app)
 ---
-╭ Smart ───────────────╮╭ All ──────────────────────────────────────╮╭ Details ────────────────────╮
-│  Important (8)       ││   [ ] Send the status report  ★ Today Work││1   Send the status report   │
-│  Planned (27)        ││   [ ] Write the quarterl… 3/4 Sun 15 Tasks││  1 [ ] Not completed  ★ Star│
-│  All (35)            ││                                           ││  2 Due: Fri 13 Nov 2026     │
-╰──────────────────────╯│                                           ││  3 List: Work               │
-╭ Lists ───────────────╮│                                           ││  4                          │
-│ ada@outlook.com      ││                                           ││  5 Notes                    │
-│  Tasks (6)           ││                                           ││  6 Include the store numbers│
-│  Groceries (4)       ││                                           ││  7                          │
-│  Reading (2)         ││                                           ││  8 Created Fri 13 Nov 2026 ·│
-│  Shared (1)  ⇄       ││                                           ││                             │
-│  Work (3)            ││                                           ││                             │
-│  Flagged email (1)   ││                                           ││                             │
-│ ada@work.example     ││                                           ││                             │
-│  Tasks (12)          ││                                           ││                             │
-│  Projects (5)        ││                                           ││                             │
-│  Flagged email (1)   ││                                           ││                             │
-│                      ││                                           ││                             │
-│                      ││                                           ││                             │
-│                      ││                                           ││                             │
-│                      ││                                           ││                             │
-│                      ││                                           ││                             │
-│                      ││                                           ││                             │
-│                      ││                                           ││                             │
-│                      ││                                           ││                             │
-│                      ││                                           ││                             │
-│                      ││                                           ││                             │
-│                      ││                                           ││                             │
-╰──────────────────────╯╰───────────────────────────────────────────╯╰─────────────────────────────╯
+╭ Smart ─────────────────────╮╭ All ──────────────────────────────────────╮╭ Details ──────────────╮
+│  Important (8)             ││   [ ] Send the status report  ★ Today Work││1   Send the status rep│
+│  Planned (27)              ││   [ ] Write the quarterl… 3/4 Sun 15 Tasks││  1 [ ] Not completed  │
+│  All (35)                  ││                                           ││  2 Due: Fri 13 Nov 202│
+╰────────────────────────────╯│                                           ││  3 List: Work         │
+╭ Lists ─────────────────────╮│                                           ││  4                    │
+│ ada@outlook.com            ││                                           ││  5 Notes              │
+│  Tasks (6)                 ││                                           ││  6 Include the store n│
+│  Groceries (4)             ││                                           ││  7                    │
+│  Reading (2)               ││                                           ││  8 Created Fri 13 Nov │
+│  Shared (1)  ⇄             ││                                           ││                       │
+│  Work (3)                  ││                                           ││                       │
+│  Flagged email (1)         ││                                           ││                       │
+│ ada@work.example           ││                                           ││                       │
+│  Tasks (12)                ││                                           ││                       │
+│  Projects (5)              ││                                           ││                       │
+│  Flagged email (1)         ││                                           ││                       │
+│                            ││                                           ││                       │
+│                            ││                                           ││                       │
+│                            ││                                           ││                       │
+│                            ││                                           ││                       │
+│                            ││                                           ││                       │
+│                            ││                                           ││                       │
+│                            ││                                           ││                       │
+│                            ││                                           ││                       │
+│                            ││                                           ││                       │
+│                            ││                                           ││                       │
+│                            ││                                           ││                       │
+╰────────────────────────────╯╰───────────────────────────────────────────╯╰───────────────────────╯
   /report
