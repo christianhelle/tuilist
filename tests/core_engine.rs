@@ -379,3 +379,17 @@ async fn updating_several_tasks_applies_the_change_to_each() {
         assert_eq!(task.due, Some(date(2026, 11, 20)));
     }
 }
+
+#[tokio::test]
+async fn an_expired_sign_in_is_reported_as_signed_out() {
+    let backend = FakeBackend::new().with_lists(&[list("l1", "Groceries")]);
+    let mut harness = Harness::new(backend.clone()).await;
+    harness.synced().await;
+
+    backend.fail_next("lists_delta", BackendError::SignedOut);
+    harness.send(Command::SyncAll);
+
+    let events = harness.until(|event| *event == Event::SignedOut).await;
+
+    assert_eq!(events.last(), Some(&Event::SignedOut));
+}

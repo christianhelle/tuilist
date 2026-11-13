@@ -395,6 +395,7 @@ impl<T: TokenSource> TodoBackend for GraphBackend<T> {
 
 fn backend_error(error: GraphError) -> BackendError {
     match &error {
+        GraphError::Auth(crate::auth::AuthError::NotSignedIn) => BackendError::SignedOut,
         GraphError::Status { status, .. } if *status == StatusCode::GONE => {
             BackendError::DeltaExpired
         }

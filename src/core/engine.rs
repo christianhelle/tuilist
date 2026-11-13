@@ -4,8 +4,10 @@
 use tokio::sync::mpsc::{Sender, UnboundedReceiver};
 
 use crate::{
-    core::sync::{sync_lists, sync_tasks},
-    model::{Event, ListId, Step, StepId, Task, TaskDraft, TaskId, TodoBackend, sort_lists},
+    core::sync::{SyncError, sync_lists, sync_tasks},
+    model::{
+        BackendError, Event, ListId, Step, StepId, Task, TaskDraft, TaskId, TodoBackend, sort_lists,
+    },
     store::Store,
 };
 
@@ -89,15 +91,19 @@ pub async fn run_engine<B: TodoBackend + Send + 'static>(
     };
     while let Some(command) = commands.recv().await {
         let what = command.what();
-        if let Err(reason) = engine.apply(command).await {
-            send(
-                &engine.events,
-                Event::Failed {
-                    what: what.to_owned(),
-                    reason,
-                },
-            )
-            .await;
+        match engine.apply(command).await {
+            Ok(()) => {}
+            Err(Failure::SignedOut) => send(&engine.events, Event::SignedOut).await,
+            Err(Failure::Message(reason)) => {
+                send(
+                    &engine.events,
+                    Event::Failed {
+                        what: what.to_owned(),
+                        reason,
+                    },
+                )
+                .await;
+            }
         }
     }
 }
@@ -109,7 +115,7 @@ struct Engine<B> {
 }
 
 impl<B: TodoBackend> Engine<B> {
-    async fn apply(&mut self, command: Command) -> Result<(), String> {
+    async fn apply(&mut self, command: Command) -> Result<(), Failure> {
         match command {
             Command::SyncAll => self.sync_all().await,
             Command::SyncList(list) => self.sync_list(list).await,
@@ -133,9 +139,9 @@ impl<B: TodoBackend> Engine<B> {
         }
     }
 
-    async fn sync_all(&mut self) -> Result<(), String> {
+    async fn sync_all(&mut self) -> Result<(), Failure> {
         if let Err(error) = sync_lists(&self.backend, &mut self.store).await {
-            failed(&self.events, "syncing lists", describe(&error)).await;
+            report(&self.events, "syncing lists", error).await;
         } else {
             send(&self.events, Event::ListsSynced).await;
         }
@@ -149,12 +155,7 @@ impl<B: TodoBackend> Engine<B> {
                     send(&self.events, Event::ListSynced(list.id.clone())).await;
                 }
                 Err(error) => {
-                    failed(
-                        &self.events,
-                        &format!("syncing {}", list.name),
-                        describe(&error),
-                    )
-                    .await;
+                    report(&self.events, &format!("syncing {}", list.name), error).await;
                 }
             }
         }
@@ -165,24 +166,24 @@ impl<B: TodoBackend> Engine<B> {
         Ok(())
     }
 
-    async fn sync_list(&mut self, list: ListId) -> Result<(), String> {
+    async fn sync_list(&mut self, list: ListId) -> Result<(), Failure> {
         sync_tasks(&self.backend, &mut self.store, &list)
             .await
-            .map_err(describe)?;
+            .map_err(sync_failure)?;
         send(&self.events, Event::ListSynced(list.clone())).await;
         send(&self.events, Event::TasksChanged(vec![list])).await;
         Ok(())
     }
 
-    async fn load_steps(&mut self, list: &ListId, task: &TaskId) -> Result<(), String> {
-        let steps = self.backend.steps(list, task).await.map_err(describe)?;
+    async fn load_steps(&mut self, list: &ListId, task: &TaskId) -> Result<(), Failure> {
+        let steps = self.backend.steps(list, task).await.map_err(failure)?;
         self.store.put_steps(task, &steps).map_err(store_error)?;
         send(&self.events, Event::StepsLoaded(task.clone())).await;
         Ok(())
     }
 
-    async fn create_list(&mut self, name: String) -> Result<(), String> {
-        let list = self.backend.create_list(&name).await.map_err(describe)?;
+    async fn create_list(&mut self, name: String) -> Result<(), Failure> {
+        let list = self.backend.create_list(&name).await.map_err(failure)?;
         self.store
             .upsert_lists(std::slice::from_ref(&list))
             .map_err(store_error)?;
@@ -190,10 +191,10 @@ impl<B: TodoBackend> Engine<B> {
         Ok(())
     }
 
-    async fn rename_list(&mut self, list: ListId, name: String) -> Result<(), String> {
+    async fn rename_list(&mut self, list: ListId, name: String) -> Result<(), Failure> {
         let before = self.store.lists().map_err(store_error)?;
         let Some(mut renamed) = before.iter().find(|l| l.id == list).cloned() else {
-            return Err("that list is no longer there".to_owned());
+            return Err("that list is no longer there".to_owned().into());
         };
         renamed.name = name.clone();
         self.store
@@ -203,12 +204,12 @@ impl<B: TodoBackend> Engine<B> {
         if let Err(error) = self.backend.rename_list(&list, &name).await {
             self.store.upsert_lists(&before).map_err(store_error)?;
             send(&self.events, Event::ListsSynced).await;
-            return Err(describe(&error));
+            return Err(failure(error));
         }
         Ok(())
     }
 
-    async fn delete_list(&mut self, list: ListId) -> Result<(), String> {
+    async fn delete_list(&mut self, list: ListId) -> Result<(), Failure> {
         let lists = self.store.lists().map_err(store_error)?;
         let Some(gone) = lists.iter().find(|l| l.id == list).cloned() else {
             return Ok(());
@@ -239,17 +240,17 @@ impl<B: TodoBackend> Engine<B> {
             }
             send(&self.events, Event::ListsSynced).await;
             send(&self.events, Event::TasksChanged(vec![list])).await;
-            return Err(describe(&error));
+            return Err(failure(error));
         }
         Ok(())
     }
 
-    async fn create_task(&mut self, list: ListId, draft: TaskDraft) -> Result<(), String> {
+    async fn create_task(&mut self, list: ListId, draft: TaskDraft) -> Result<(), Failure> {
         let task = self
             .backend
             .create_task(&list, &draft)
             .await
-            .map_err(describe)?;
+            .map_err(failure)?;
         self.store
             .upsert_tasks(std::slice::from_ref(&task))
             .map_err(store_error)?;
@@ -261,7 +262,7 @@ impl<B: TodoBackend> Engine<B> {
         &mut self,
         tasks: Vec<(ListId, TaskId)>,
         draft: TaskDraft,
-    ) -> Result<(), String> {
+    ) -> Result<(), Failure> {
         let mut before = Vec::new();
         let mut lists = Vec::new();
         for (list, id) in &tasks {
@@ -311,7 +312,7 @@ impl<B: TodoBackend> Engine<B> {
         }
     }
 
-    async fn delete_tasks(&mut self, tasks: Vec<(ListId, TaskId)>) -> Result<(), String> {
+    async fn delete_tasks(&mut self, tasks: Vec<(ListId, TaskId)>) -> Result<(), Failure> {
         let mut before = Vec::new();
         let mut lists = Vec::new();
         for (list, id) in &tasks {
@@ -349,7 +350,11 @@ impl<B: TodoBackend> Engine<B> {
         Ok(())
     }
 
-    async fn move_tasks(&mut self, tasks: Vec<(ListId, TaskId)>, to: ListId) -> Result<(), String> {
+    async fn move_tasks(
+        &mut self,
+        tasks: Vec<(ListId, TaskId)>,
+        to: ListId,
+    ) -> Result<(), Failure> {
         let mut copies = Vec::new();
         for (list, id) in &tasks {
             let Some(task) = self.store.task(id).map_err(store_error)? else {
@@ -358,7 +363,7 @@ impl<B: TodoBackend> Engine<B> {
             let steps = if task.steps_loaded {
                 self.store.steps(id).map_err(store_error)?
             } else {
-                self.backend.steps(list, id).await.map_err(describe)?
+                self.backend.steps(list, id).await.map_err(failure)?
             };
             match self.copy_task(&task, &to, &steps).await {
                 Ok((copy, copied_steps)) => copies.push((copy, copied_steps)),
@@ -408,7 +413,7 @@ impl<B: TodoBackend> Engine<B> {
         task: &Task,
         to: &ListId,
         steps: &[Step],
-    ) -> Result<(Task, Vec<Step>), String> {
+    ) -> Result<(Task, Vec<Step>), Failure> {
         let draft = TaskDraft {
             title: Some(task.title.clone()),
             starred: Some(task.importance.is_starred()),
@@ -421,7 +426,7 @@ impl<B: TodoBackend> Engine<B> {
             .backend
             .create_task(to, &draft)
             .await
-            .map_err(describe)?;
+            .map_err(failure)?;
         let mut copied_steps = Vec::new();
         for step in steps {
             match self.backend.create_step(to, &copy.id, &step.name).await {
@@ -435,7 +440,7 @@ impl<B: TodoBackend> Engine<B> {
                     }
                     copied_steps.push(copied);
                 }
-                Err(error) => return Err(describe(&error)),
+                Err(error) => return Err(failure(error)),
             }
         }
         Ok((copy, copied_steps))
@@ -446,12 +451,12 @@ impl<B: TodoBackend> Engine<B> {
         list: ListId,
         task: TaskId,
         name: String,
-    ) -> Result<(), String> {
+    ) -> Result<(), Failure> {
         let step = self
             .backend
             .create_step(&list, &task, &name)
             .await
-            .map_err(describe)?;
+            .map_err(failure)?;
         self.store.upsert_step(&step).map_err(store_error)?;
         send(&self.events, Event::StepsLoaded(task)).await;
         send(&self.events, Event::TasksChanged(vec![list])).await;
@@ -465,7 +470,7 @@ impl<B: TodoBackend> Engine<B> {
         step: StepId,
         name: Option<String>,
         checked: Option<bool>,
-    ) -> Result<(), String> {
+    ) -> Result<(), Failure> {
         let before = self
             .store
             .steps(&task)
@@ -494,7 +499,7 @@ impl<B: TodoBackend> Engine<B> {
             }
             send(&self.events, Event::StepsLoaded(task)).await;
             send(&self.events, Event::TasksChanged(vec![list])).await;
-            return Err(describe(&error));
+            return Err(failure(error));
         }
         Ok(())
     }
@@ -504,7 +509,7 @@ impl<B: TodoBackend> Engine<B> {
         list: ListId,
         task: TaskId,
         step: StepId,
-    ) -> Result<(), String> {
+    ) -> Result<(), Failure> {
         let before = self
             .store
             .steps(&task)
@@ -520,9 +525,44 @@ impl<B: TodoBackend> Engine<B> {
             }
             send(&self.events, Event::StepsLoaded(task)).await;
             send(&self.events, Event::TasksChanged(vec![list])).await;
-            return Err(describe(&error));
+            return Err(failure(error));
         }
         Ok(())
+    }
+}
+
+#[derive(Debug)]
+enum Failure {
+    SignedOut,
+    Message(String),
+}
+
+impl From<String> for Failure {
+    fn from(reason: String) -> Self {
+        Failure::Message(reason)
+    }
+}
+
+fn failure(error: BackendError) -> Failure {
+    match error {
+        BackendError::SignedOut => Failure::SignedOut,
+        other => Failure::Message(describe(&other)),
+    }
+}
+
+fn sync_failure(error: SyncError) -> Failure {
+    match error {
+        SyncError::Backend(error) => failure(error),
+        SyncError::Store(error) => Failure::Message(describe(&error)),
+    }
+}
+
+/// Reports a sync failure, saying the sign-in expired rather than showing it
+/// as an ordinary error.
+async fn report(events: &Sender<Event>, what: &str, error: SyncError) {
+    match sync_failure(error) {
+        Failure::SignedOut => send(events, Event::SignedOut).await,
+        Failure::Message(reason) => failed(events, what, reason).await,
     }
 }
 

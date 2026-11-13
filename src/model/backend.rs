@@ -11,6 +11,9 @@ pub enum BackendError {
     DeltaExpired,
     #[error("not found")]
     NotFound,
+    /// The sign-in can no longer be refreshed; the user must sign in again.
+    #[error("signed out")]
+    SignedOut,
     #[error("{0}")]
     Other(String),
 }
