@@ -1,7 +1,27 @@
 #![allow(dead_code)]
 
-use jiff::Timestamp;
-use tuilist::model::{Importance, ListId, Status, Step, StepId, Task, TaskId, TaskList};
+use jiff::{Timestamp, tz::TimeZone};
+use tuilist::{
+    auth::{AuthError, TokenSource},
+    graph::{GraphBackend, GraphClient},
+    model::{Importance, ListId, Status, Step, StepId, Task, TaskId, TaskList},
+};
+use wiremock::MockServer;
+
+pub struct Token;
+
+impl TokenSource for Token {
+    async fn access_token(&self) -> Result<String, AuthError> {
+        Ok("access".to_owned())
+    }
+
+    async fn invalidate(&self) {}
+}
+
+pub fn backend(server: &MockServer) -> GraphBackend<Token> {
+    GraphBackend::new(GraphClient::new(server.uri(), Token))
+        .with_time_zone(TimeZone::get("UTC").unwrap())
+}
 
 pub fn list(id: &str, name: &str) -> TaskList {
     TaskList {
