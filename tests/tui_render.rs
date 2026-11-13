@@ -161,8 +161,8 @@ fn tasks_app() -> (AppState, TaskBoxes) {
     (app, boxes)
 }
 
-fn press(app: &mut AppState, code: KeyCode) {
-    app.on_key(KeyEvent::from(code), &mut Keymap::default());
+fn press(app: &mut AppState, code: KeyCode) -> tuilist::tui::app::Effect {
+    app.on_key(KeyEvent::from(code), &mut Keymap::default())
 }
 
 #[test]
@@ -209,6 +209,30 @@ fn the_task_form_shows_every_field() {
 fn the_add_step_prompt_names_the_task() {
     let (mut app, _boxes) = tasks_app();
     press(&mut app, KeyCode::Char('s'));
+
+    insta::assert_snapshot!(screen(&mut app));
+}
+
+fn search(app: &mut AppState, boxes: &mut TaskBoxes, query: &str) {
+    press(app, KeyCode::Char('/'));
+    for c in query.chars() {
+        let effect = press(app, KeyCode::Char(c));
+        boxes.apply(app, effect);
+    }
+}
+
+#[test]
+fn search_results_say_which_list_each_task_is_in() {
+    let (mut app, mut boxes) = demo_app();
+    search(&mut app, &mut boxes, "report");
+
+    insta::assert_snapshot!(screen(&mut app));
+}
+
+#[test]
+fn a_search_with_no_results_says_so() {
+    let (mut app, mut boxes) = demo_app();
+    search(&mut app, &mut boxes, "zzzz");
 
     insta::assert_snapshot!(screen(&mut app));
 }
