@@ -18,7 +18,8 @@ use tuilist::{
     core::{sync_lists, sync_tasks},
     store::Store,
     tui::{
-        app::AppState, demo, keymap::Keymap, run_loop::on_terminal_event, taskboxes::TaskBoxes, ui,
+        app::AppState, demo, keymap::Keymap, run_loop::on_terminal_event, session::Session,
+        taskboxes::TaskBoxes, ui,
     },
 };
 
@@ -75,7 +76,12 @@ fn main() -> Result<()> {
     };
     let mut boxes = TaskBoxes::new(accounts);
     boxes.load(&mut app)?;
-    with_terminal(|terminal| drive(terminal, &mut app, &mut boxes))
+    if let Some(session) = Session::load() {
+        session.apply(&mut app);
+        boxes.load(&mut app)?;
+    }
+    with_terminal(|terminal| drive(terminal, &mut app, &mut boxes))?;
+    Session::of(&app).save()
 }
 
 async fn seed_demo() -> Result<Vec<(String, Store)>> {
