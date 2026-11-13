@@ -16,5 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Searching tasks across accounts with `/`.
 - Signing in and out, and listing the signed-in accounts, with `todo login`,
   `todo logout` and `todo accounts`.
+- Browsing real accounts from an offline cache, with sync in the background,
+  on `F5`, and from `todo sync`.
 
 [Unreleased]: https://github.com/christianhelle/tuilist/commits/main
