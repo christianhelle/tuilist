@@ -116,12 +116,12 @@ fn main() -> Result<()> {
         Some(CliCommand::Sync) => runtime.block_on(sync()),
         Some(CliCommand::CheckUpdate) => runtime.block_on(check_update()),
         Some(CliCommand::Update) => runtime.block_on(install_update()),
-        None if cli.demo => run_demo(&runtime, &cli),
+        None if cli.demo => run_demo(&runtime),
         None => run_live(&runtime, &cli),
     }
 }
 
-fn run_demo(runtime: &tokio::runtime::Runtime, cli: &Cli) -> Result<()> {
+fn run_demo(runtime: &tokio::runtime::Runtime) -> Result<()> {
     let dir = tempfile::tempdir()?;
     let seeded = runtime.block_on(seed_demo(dir.path()))?;
     let mut accounts = Vec::new();
@@ -147,10 +147,7 @@ fn run_demo(runtime: &tokio::runtime::Runtime, cli: &Cli) -> Result<()> {
         session.apply(&mut app);
         boxes.load(&mut app)?;
     }
-    let (update_tx, mut updates) = mpsc::channel(4);
-    watch_for_update(runtime, cli, update_tx.clone());
-    boxes.attach_installer(install_on_request(runtime, update_tx));
-    with_terminal(|terminal| drive(terminal, &mut app, &mut boxes, None, Some(&mut updates)))?;
+    with_terminal(|terminal| drive(terminal, &mut app, &mut boxes, None, None))?;
     Session::of(&app).save()
 }
 
