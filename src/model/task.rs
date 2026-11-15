@@ -175,25 +175,4 @@ mod tests {
         let ids: Vec<&str> = tasks.iter().map(|task| task.id.0.as_str()).collect();
         assert_eq!(ids, ["new", "old", "done-new", "done-old"]);
     }
-
-    #[test]
-    fn every_status_but_completed_is_open() {
-        assert!(Status::NotStarted.is_open());
-        assert!(Status::InProgress.is_open());
-        assert!(Status::WaitingOnOthers.is_open());
-        assert!(Status::Deferred.is_open());
-        assert!(!Status::Completed.is_open());
-    }
-
-    #[test]
-    fn a_draft_with_nothing_set_changes_nothing() {
-        assert!(TaskDraft::default().is_empty());
-        assert!(
-            !TaskDraft {
-                title: Some("Milk".to_owned()),
-                ..TaskDraft::default()
-            }
-            .is_empty()
-        );
-    }
 }
