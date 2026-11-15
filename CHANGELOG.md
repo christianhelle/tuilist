@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-15
+
 ### Added
 
 - The terminal UI: lists, tasks and details panes, vim keys, dialogs, and a
@@ -29,4 +31,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The details pane's arrow, page and jump keys move between tasks.
 
-[Unreleased]: https://github.com/christianhelle/tuilist/commits/main
+[Unreleased]: https://github.com/christianhelle/tuilist/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/christianhelle/tuilist/releases/tag/v0.1.1
