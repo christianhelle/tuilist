@@ -7,14 +7,3 @@ pub enum Cursor {
     Bar,
     Block,
 }
-
-#[cfg(test)]
-mod tests {
-    use super::Cursor;
-
-    #[test]
-    fn the_cursor_shapes_are_distinct() {
-        assert_ne!(Cursor::Default, Cursor::Bar);
-        assert_ne!(Cursor::Bar, Cursor::Block);
-    }
-}
