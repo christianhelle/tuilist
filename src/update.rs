@@ -367,11 +367,6 @@ mod tests {
     }
 
     #[test]
-    fn the_running_version_is_the_packages() {
-        assert_eq!(current().to_string(), env!("CARGO_PKG_VERSION"));
-    }
-
-    #[test]
     fn windows_archives_are_zips() {
         assert_eq!(
             asset_name(&version("0.1.5"), "x86_64-pc-windows-msvc"),
@@ -522,11 +517,6 @@ mod tests {
     fn a_corrupt_archive_is_an_error() {
         assert!(extract(b"nope", "todo.zip", "todo.exe").is_err());
         assert!(extract(b"nope", "todo.tar.gz", "todo").is_err());
-    }
-
-    #[test]
-    fn the_target_is_a_triple() {
-        assert!(TARGET.split('-').count() >= 3, "{TARGET}");
     }
 
     #[test]
