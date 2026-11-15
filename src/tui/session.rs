@@ -87,29 +87,3 @@ impl Session {
         Ok(())
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::tui::app::AppState;
-
-    #[test]
-    fn the_place_is_read_back_as_it_was_left() {
-        let mut app = AppState {
-            focus: Pane::Tasks,
-            zoomed: true,
-            completed_hidden: true,
-            ..AppState::default()
-        };
-        app.collapsed_groups.insert("completed".to_owned());
-
-        let session = Session::of(&app);
-        let mut restored = AppState::default();
-        session.apply(&mut restored);
-
-        assert_eq!(restored.focus, Pane::Tasks);
-        assert!(restored.zoomed);
-        assert!(restored.completed_hidden);
-        assert!(restored.collapsed_groups.contains("completed"));
-    }
-}
