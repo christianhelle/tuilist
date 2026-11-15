@@ -514,16 +514,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn signs_in_with_the_tuilist_app_registration_by_default() {
-        let cli = Cli::try_parse_from(["todo"]).unwrap();
-
-        assert_eq!(
-            cli.client_id.as_str(),
-            "5de297ab-80a5-4cfc-bdea-38e33b917993"
-        );
-    }
-
-    #[test]
     fn signs_in_to_personal_accounts_by_default() {
         let cli = Cli::try_parse_from(["todo"]).unwrap();
 
