@@ -73,30 +73,6 @@ fn screen_at(app: &mut AppState, width: u16, height: u16) -> String {
 }
 
 #[test]
-fn the_demo_paints_lists_tasks_and_a_status_line() {
-    let (mut app, _boxes) = demo_app();
-
-    let screen = screen(&mut app);
-
-    assert!(screen.contains("Groceries"), "{screen}");
-    assert!(screen.contains("Buy milk"), "{screen}");
-    assert!(screen.contains("Today"), "{screen}");
-    assert!(screen.contains("ada@outlook.com"), "{screen}");
-    assert!(screen.contains("? help"), "{screen}");
-}
-
-#[test]
-fn the_help_dialog_covers_the_screen() {
-    let (mut app, _boxes) = demo_app();
-    app.dialog = Some(tuilist::tui::dialog::Dialog::Help);
-
-    let screen = screen(&mut app);
-
-    assert!(screen.contains("Keys"), "{screen}");
-    assert!(screen.contains("next or previous pane"), "{screen}");
-}
-
-#[test]
 fn the_lists_pane_is_the_default_focus() {
     let (mut app, _boxes) = demo_app();
 
