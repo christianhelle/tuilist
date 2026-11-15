@@ -38,7 +38,7 @@ const SCOPES: [&str; 3] = ["offline_access", "User.Read", "Tasks.ReadWrite"];
 
 /// The Entra ID app registration tuilook and tuilist share (a public client;
 /// not a secret).
-const DEFAULT_CLIENT_ID: &str = "5de297ab-80a5-4cfc-bdea-38e33b917993";
+const DEFAULT_CLIENT_ID: &str = "29eacb83-0210-46dc-9972-92acbcef894a";
 
 #[derive(Parser)]
 #[command(
