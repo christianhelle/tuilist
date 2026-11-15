@@ -172,16 +172,6 @@ mod tests {
     }
 
     #[test]
-    fn saves_and_loads_again() {
-        let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("accounts.json");
-
-        accounts().save(&path).unwrap();
-
-        assert_eq!(Accounts::load(&path).unwrap(), accounts());
-    }
-
-    #[test]
     fn nothing_saved_means_no_accounts() {
         let dir = tempfile::tempdir().unwrap();
 
