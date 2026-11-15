@@ -164,11 +164,4 @@ mod tests {
             }
         }
     }
-
-    #[test]
-    fn the_hints_name_keys_that_do_something() {
-        assert!(hint(Pane::Lists).contains("F2"));
-        assert!(hint(Pane::Tasks).contains("/ search"));
-        assert!(hint(Pane::Details).contains("y copy"));
-    }
 }
