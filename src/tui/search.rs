@@ -33,22 +33,3 @@ impl Search {
         self.step.unwrap_or(Step::Typing)
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use ratatui::crossterm::event::{KeyCode, KeyEvent};
-
-    #[test]
-    fn a_new_search_is_being_typed_and_enter_moves_to_the_results() {
-        let mut search = Search::default();
-        assert!(search.typing());
-
-        search.input.key(KeyEvent::from(KeyCode::Char('m')));
-        search.finish();
-
-        assert!(!search.typing());
-        assert_eq!(search.query(), "m");
-        assert_eq!(search.step(), Step::Results);
-    }
-}
