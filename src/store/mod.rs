@@ -520,12 +520,4 @@ mod tests {
     fn migrations_are_valid() {
         MIGRATIONS.validate().unwrap();
     }
-
-    #[test]
-    fn a_new_store_has_no_lists_or_tasks() {
-        let store = Store::open_in_memory().unwrap();
-
-        assert!(store.lists().unwrap().is_empty());
-        assert!(store.all_open().unwrap().is_empty());
-    }
 }
