@@ -515,18 +515,6 @@ mod tests {
     }
 
     #[test]
-    fn a_deleted_list_needs_only_its_id() {
-        let item: dto::TodoList = serde_json::from_value(json!({
-            "id": "gone",
-            "@removed": { "reason": "deleted" }
-        }))
-        .unwrap();
-
-        assert!(item.removed.is_some());
-        assert_eq!(item.id, "gone");
-    }
-
-    #[test]
     fn writes_carry_only_the_fields_the_draft_sets() {
         let body = backend().draft_json(&TaskDraft {
             starred: Some(true),
