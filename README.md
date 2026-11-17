@@ -34,13 +34,13 @@ curl -fsSL https://christianhelle.com/tuilist/install | VERSION="0.1.1" bash
 irm https://christianhelle.com/tuilist/install.ps1 | iex
 ```
 
-This installs the latest release to `%LOCALAPPDATA%\Programs	uilist`, or to
-`~\.localin` or `~in` if one of those already exists, and adds it to your
+This installs the latest release to `%LOCALAPPDATA%\Programs\tuilist`, or to
+`~\.local\bin` or `~\bin` if one of those already exists, and adds it to your
 user `PATH`. To install somewhere else, or to pin a release:
 
 ```powershell
 $install = irm https://christianhelle.com/tuilist/install.ps1
-& ([scriptblock]::Create($install)) -InstallDir "$env:USERPROFILEin"
+& ([scriptblock]::Create($install)) -InstallDir "$env:USERPROFILE\bin"
 & ([scriptblock]::Create($install)) -Version "0.1.1"
 ```
 
