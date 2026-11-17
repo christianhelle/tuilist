@@ -9,7 +9,7 @@ readme = "README.md"
 repository = "https://github.com/christianhelle/tuilist"
 keywords = ["todo", "tasks", "microsoft-to-do", "tui", "terminal"]
 categories = ["command-line-utilities"]
-exclude = [".github/", ".gitattributes", "images/"]
+exclude = [".github/", ".gitattributes", "images/*.jpg", "images/icon.png"]
 
 [[bin]]
 name = "todo"
@@ -43,4 +43,7 @@ zip = { version = "9.4.1", default-features = false, features = ["deflate"] }
 futures = "0.3.34"
 insta = "1.49.0"
 wiremock = "0.6.5"
+
+[build-dependencies]
+winresource = "0.1.34"
 
