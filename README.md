@@ -4,7 +4,7 @@
 [![CI](https://github.com/christianhelle/tuilist/actions/workflows/ci.yml/badge.svg)](https://github.com/christianhelle/tuilist/actions/workflows/ci.yml)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-A terminal client for Microsoft To Do, with vim-style keys. Three panes show your
+A terminal client for [Microsoft To Do](https://to-do.office.com/tasks/), with vim-style keys. Three panes show your
 lists, tasks and details, an offline cache opens instantly, and sync runs in the
 background.
 
