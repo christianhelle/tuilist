@@ -12,22 +12,59 @@ background.
 
 ## Install
 
+tuilist installs as the `todo` command.
+
+### macOS/Linux
+
+```bash
+curl -fsSL https://christianhelle.com/tuilist/install | bash
+```
+
+This installs the latest release to `~/.local/bin`. To install somewhere else,
+or to pin a release:
+
+```bash
+curl -fsSL https://christianhelle.com/tuilist/install | INSTALL_DIR="$HOME/bin" bash
+curl -fsSL https://christianhelle.com/tuilist/install | VERSION="0.1.1" bash
+```
+
+### Windows PowerShell
+
+```powershell
+irm https://christianhelle.com/tuilist/install.ps1 | iex
+```
+
+This installs the latest release to `%LOCALAPPDATA%\Programs	uilist`, or to
+`~\.localin` or `~in` if one of those already exists, and adds it to your
+user `PATH`. To install somewhere else, or to pin a release:
+
+```powershell
+$install = irm https://christianhelle.com/tuilist/install.ps1
+& ([scriptblock]::Create($install)) -InstallDir "$env:USERPROFILEin"
+& ([scriptblock]::Create($install)) -Version "0.1.1"
+```
+
+### Cargo
+
+With a recent stable [Rust](https://rustup.rs) toolchain (1.95 or later),
+install it from [crates.io](https://crates.io/crates/tuilist):
+
 ```bash
 cargo install tuilist --locked
 ```
 
-Or use the install script for your platform:
+### Release archives
 
-```powershell
-irm https://raw.githubusercontent.com/christianhelle/tuilist/main/docs/install.ps1 | iex
-```
+Download a build from the
+[releases page](https://github.com/christianhelle/tuilist/releases), unpack it
+and put `todo` somewhere on your `PATH`. Archives are available for Linux,
+macOS and Windows, on x64 and ARM64.
+
+To try changes that aren't released yet, install straight from GitHub:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/christianhelle/tuilist/main/docs/install.sh | sh
+cargo install --git https://github.com/christianhelle/tuilist
 ```
-
-Prebuilt archives for Windows, macOS and Linux are on the
-[releases page](https://github.com/christianhelle/tuilist/releases).
 
 ## Sign in
 
