@@ -1,0 +1,34 @@
+---
+source: tests/tui_render.rs
+expression: screen
+---
+╭ Favorites ─────────────────╮╭ Tasks ────────────────────────────────────╮╭ Details ──────────────╮
+│  Tasks - ada@outlook.com (6││   [ ] Buy milk                 1/2 ★ Today││1   Buy milk           │
+│  Tasks - ada@work.example (││   [ ] Coffee beans              1/3 Sun 15││  1 [ ] Not completed  │
+╰────────────────────────────╯│   [ ] Bread                              ↻││  2 Due: Fri 13 Nov 202│
+╭ Smart ─────────────────────╮│   [ ] Oat milk                      Thu 19││  3 List: All          │
+│  Important (8)             ││   [ ] Send the status report       ★ Today││  4                    │
+│  Planned (27)              ││   [ ] Review the pull request    Yesterday││  5 Steps              │
+│  All (35)                  ││   [ ] Plan the next sprint      2/3 Mon 16││  6 [x] Check the fridg│
+╰────────────────────────────╯│   [ ] Read Dune                           ││  7 [ ] Semi-skimmed   │
+╭ Lists ─────────────────────╮│   [ ] Read the saved articles       23 Nov││  8                    │
+│ ada@outlook.com            ││   [ ] Pack the boxes          0/1 Tomorrow││  9 Notes              │
+│  Tasks (6)                 ││   [ ] Water the plants                   ★││ 10 Semi-skimmed       │
+│  Groceries (4)             ││   [ ] Call the dentist               Today││ 11                    │
+│  Reading (2)               ││   [ ] Renew the passport            13 Dec││ 12 Created Fri 13 Nov │
+│  Shared (1)  ⇄             ││   [ ] Pay the rent                ↻ Wed 18││                       │
+│  Work (3)                  ││   [ ] Book the flights              Wed 18││                       │
+│  Flagged email (1)         ││   [ ] Return the parcel             11 Nov││                       │
+│ ada@work.example           ││   [ ] Email from the bank                ★││                       │
+│  Tasks (12)                ││   [ ] Send the invoices            ★ Today││                       │
+│  Projects (5)              ││   [ ] Write the quarterly repo… 3/4 Sun 15││                       │
+│  Flagged email (1)         ││   [ ] Prepare the standup                ↻││                       │
+│                            ││   [ ] Return the old laptop         10 Nov││                       │
+│                            ││   [ ] File the expenses           Tomorrow││                       │
+│                            ││   [ ] Book the one-to-one           Tue 17││                       │
+│                            ││   [ ] Request the holiday           25 Nov││                       │
+│                            ││   [ ] Review the task specifi… 1/2 ★ Today││                       │
+│                            ││   [ ] Build the prototype       1/4 20 Nov││                       │
+│                            ││   [ ] Record the demo               22 Nov││                       │
+╰────────────────────────────╯╰───────────────────────────────────────────╯╰───────────────────────╯
+  Added Tasks to Favorites

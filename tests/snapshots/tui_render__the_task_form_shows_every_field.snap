@@ -2,14 +2,17 @@
 source: tests/tui_render.rs
 expression: screen(&mut app)
 ---
-╭ Smart ─────────────────────╮┏ Edit task ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-│  Important (8)             │┃  Title:   Buy milk                                                 ┃
-│  Planned (27)              │┃  Due:     2026-11-13                                               ┃
-│  All (35)                  │┃  Remind:                                                           ┃
-╰────────────────────────────╯┃  Starred: [x]                                                      ┃
-╭ Lists ─────────────────────╮┃  ── Notes                                                          ┃
+╭ Favorites ─────────────────╮┏ Edit task ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+│* adds the selected list    │┃  Title:   Buy milk                                                 ┃
+╰────────────────────────────╯┃  Due:     2026-11-13                                               ┃
+╭ Smart ─────────────────────╮┃  Remind:                                                           ┃
+│  Important (8)             │┃  Starred: [x]                                                      ┃
+│  Planned (27)              │┃  ── Notes                                                          ┃
+│  All (35)                  │┃                                                                    ┃
+╰────────────────────────────╯┃1   Semi-skimmed                                                    ┃
+╭ Lists ─────────────────────╮┃                                                                    ┃
 │ ada@outlook.com            │┃                                                                    ┃
-│  Tasks (6)                 │┃1   Semi-skimmed                                                    ┃
+│  Tasks (6)                 │┃                                                                    ┃
 │  Groceries (4)             │┃                                                                    ┃
 │  Reading (2)               │┃                                                                    ┃
 │  Shared (1)  ⇄             │┃                                                                    ┃
@@ -19,9 +22,6 @@ expression: screen(&mut app)
 │  Tasks (12)                │┃                                                                    ┃
 │  Projects (5)              │┃                                                                    ┃
 │  Flagged email (1)         │┃                                                                    ┃
-│                            │┃                                                                    ┃
-│                            │┃                                                                    ┃
-│                            │┃                                                                    ┃
 │                            │┃                                                                    ┃
 │                            │┃                                                                    ┃
 │                            │┃                                                                    ┃

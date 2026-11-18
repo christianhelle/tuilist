@@ -2,26 +2,26 @@
 source: tests/tui_render.rs
 expression: screen(&mut app)
 ---
-╭ Smart ─────────────────────╮╭ All ──────────────────────────────────────╮╭ Details ──────────────╮
-│  Important (8)             ││ ▾ Groceries (4)                           ││1   Buy milk           │
-│  Planned (27)              ││ > [ ] Buy milk                 1/2 ★ Today││  1 [ ] Not completed  │
-│  All (35)                  ││   [ ] Coffee beans              1/3 Sun 15││  2 Due: Fri 13 Nov 202│
-╰────────────────────────────╯│   [ ] Bread                              ↻││  3 List: All          │
-╭ Lists ─────────────────────╮│   [ ] Oat milk                      Thu 19││  4                    │
-│ ada@outlook.com            ││ ▾ Work (3)                                ││  5 Steps              │
-│  Tasks (6)                 ││   [ ] Send the status report       ★ Today││  6 [x] Check the fridg│
-│  Groceries (4)             ││   [ ] Review the pull request    Yesterday││  7 [ ] Semi-skimmed   │
-│  Reading (2)               ││   [ ] Plan the next sprint      2/3 Mon 16││  8                    │
-│  Shared (1)  ⇄             ││ ▾ Reading (2)                             ││  9 Notes              │
-│  Work (3)                  ││   [ ] Read Dune                           ││ 10 Semi-skimmed       │
-│  Flagged email (1)         ││   [ ] Read the saved articles       23 Nov││ 11                    │
-│ ada@work.example           ││ ▾ Shared (1)                              ││ 12 Created Fri 13 Nov │
-│  Tasks (12)                ││   [ ] Pack the boxes          0/1 Tomorrow││                       │
-│  Projects (5)              ││ ▾ Tasks (18)                              ││                       │
-│  Flagged email (1)         ││   [ ] Water the plants                   ★││                       │
-│                            ││   [ ] Call the dentist               Today││                       │
-│                            ││   [ ] Renew the passport            13 Dec││                       │
-│                            ││   [ ] Pay the rent                ↻ Wed 18││                       │
+╭ Favorites ─────────────────╮╭ All ──────────────────────────────────────╮╭ Details ──────────────╮
+│* adds the selected list    ││ ▾ Groceries (4)                           ││1   Buy milk           │
+╰────────────────────────────╯│ > [ ] Buy milk                 1/2 ★ Today││  1 [ ] Not completed  │
+╭ Smart ─────────────────────╮│   [ ] Coffee beans              1/3 Sun 15││  2 Due: Fri 13 Nov 202│
+│  Important (8)             ││   [ ] Bread                              ↻││  3 List: All          │
+│  Planned (27)              ││   [ ] Oat milk                      Thu 19││  4                    │
+│  All (35)                  ││ ▾ Work (3)                                ││  5 Steps              │
+╰────────────────────────────╯│   [ ] Send the status report       ★ Today││  6 [x] Check the fridg│
+╭ Lists ─────────────────────╮│   [ ] Review the pull request    Yesterday││  7 [ ] Semi-skimmed   │
+│ ada@outlook.com            ││   [ ] Plan the next sprint      2/3 Mon 16││  8                    │
+│  Tasks (6)                 ││ ▾ Reading (2)                             ││  9 Notes              │
+│  Groceries (4)             ││   [ ] Read Dune                           ││ 10 Semi-skimmed       │
+│  Reading (2)               ││   [ ] Read the saved articles       23 Nov││ 11                    │
+│  Shared (1)  ⇄             ││ ▾ Shared (1)                              ││ 12 Created Fri 13 Nov │
+│  Work (3)                  ││   [ ] Pack the boxes          0/1 Tomorrow││                       │
+│  Flagged email (1)         ││ ▾ Tasks (18)                              ││                       │
+│ ada@work.example           ││   [ ] Water the plants                   ★││                       │
+│  Tasks (12)                ││   [ ] Call the dentist               Today││                       │
+│  Projects (5)              ││   [ ] Renew the passport            13 Dec││                       │
+│  Flagged email (1)         ││   [ ] Pay the rent                ↻ Wed 18││                       │
 │                            ││   [ ] Book the flights              Wed 18││                       │
 │                            ││   [ ] Return the parcel             11 Nov││                       │
 │                            ││ ▾ Flagged email (2)                       ││                       │

@@ -152,11 +152,18 @@ pub fn hit(area: Rect, app: &AppState, column: u16, row: u16) -> Option<Hit> {
             && row < rect.y.saturating_add(rect.height)
     };
     if inside(panes.lists) {
-        let (smart, lists) = list_rects(panes.lists);
-        let row = if inside(smart) {
-            row.saturating_sub(smart.y + 1) as usize
+        let (favorites, smart, lists) = list_rects(panes.lists, app);
+        let favorite_rows = favorite_count(app);
+        let row = if inside(favorites) {
+            let row = row.saturating_sub(favorites.y + 1) as usize;
+            if row >= favorite_rows {
+                return None;
+            }
+            row
+        } else if inside(smart) {
+            favorite_rows + row.saturating_sub(smart.y + 1) as usize
         } else if inside(lists) {
-            3 + row.saturating_sub(lists.y + 1) as usize
+            favorite_rows + 3 + row.saturating_sub(lists.y + 1) as usize
         } else {
             return None;
         };
@@ -180,22 +187,76 @@ pub fn hit(area: Rect, app: &AppState, column: u16, row: u16) -> Option<Hit> {
     None
 }
 
-fn list_rects(area: Rect) -> (Rect, Rect) {
-    let [smart, lists] = Layout::vertical([Constraint::Length(5), Constraint::Min(0)]).areas(area);
-    (smart, lists)
+fn favorite_count(app: &AppState) -> usize {
+    app.rows
+        .iter()
+        .take_while(|row| matches!(row, ListRow::Favorite { .. }))
+        .count()
+}
+
+fn list_rects(area: Rect, app: &AppState) -> (Rect, Rect, Rect) {
+    let rows = u16::try_from(favorite_count(app).max(1)).unwrap_or(u16::MAX);
+    let favorites = rows.saturating_add(2).min(area.height / 3).max(3);
+    let [favorites, smart, lists] = Layout::vertical([
+        Constraint::Length(favorites),
+        Constraint::Length(5),
+        Constraint::Min(0),
+    ])
+    .areas(area);
+    (favorites, smart, lists)
 }
 
 fn draw_lists(frame: &mut Frame, area: Rect, app: &AppState) {
     if area.width == 0 || area.height == 0 {
         return;
     }
-    let (smart_area, lists_area) = list_rects(area);
+    let (favorites_area, smart_area, lists_area) = list_rects(area, app);
     let focus = app.focus == Pane::Lists;
     let border = if focus {
         Style::new().fg(Color::Cyan)
     } else {
         Style::new()
     };
+    let favorites = Block::bordered()
+        .border_type(BorderType::Rounded)
+        .border_style(border)
+        .title(" Favorites ");
+    let inner = favorites.inner(favorites_area);
+    frame.render_widget(favorites, favorites_area);
+    let mut y = inner.y;
+    let mut shown = false;
+    for (index, row) in app.rows.iter().enumerate() {
+        if y >= inner.y + inner.height {
+            break;
+        }
+        let ListRow::Favorite { account, list } = row else {
+            continue;
+        };
+        shown = true;
+        let selected = index == app.selected_list && focus;
+        let mut text = format!("  {}", app.favorite_label(*account, list));
+        if list.open > 0 {
+            text.push_str(&format!(" ({})", list.open));
+        }
+        if list.is_shared {
+            text.push_str("  ⇄");
+        }
+        let line = Line::from(text);
+        let line = if selected {
+            line.style(Style::new().add_modifier(Modifier::REVERSED))
+        } else {
+            line
+        };
+        frame.render_widget(Paragraph::new(line), Rect::new(inner.x, y, inner.width, 1));
+        y += 1;
+    }
+    if !shown && inner.height > 0 {
+        frame.render_widget(
+            Paragraph::new("* adds the selected list").style(Style::new().dim()),
+            Rect::new(inner.x, y, inner.width, 1),
+        );
+    }
+
     let smart = Block::bordered()
         .border_type(BorderType::Rounded)
         .border_style(border)
@@ -203,6 +264,7 @@ fn draw_lists(frame: &mut Frame, area: Rect, app: &AppState) {
     let inner = smart.inner(smart_area);
     frame.render_widget(smart, smart_area);
     let counts = [app.smart_counts.0, app.smart_counts.1, app.smart_counts.2];
+    let smart_start = favorite_count(app);
     for (index, smart) in [Smart::Important, Smart::Planned, Smart::All]
         .into_iter()
         .enumerate()
@@ -210,7 +272,7 @@ fn draw_lists(frame: &mut Frame, area: Rect, app: &AppState) {
         if index >= inner.height as usize {
             break;
         }
-        let selected = app.selected_list == index && focus;
+        let selected = app.selected_list == smart_start + index && focus;
         let count = counts[index];
         let mut text = format!("  {}", smart.name());
         if count > 0 {

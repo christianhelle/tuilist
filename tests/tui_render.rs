@@ -6,10 +6,10 @@ use ratatui::{
 };
 use tuilist::{
     core::{sync_lists, sync_tasks},
-    model::ListId,
+    model::{Action, ListId},
     store::Store,
     tui::{
-        app::{AppState, Pane, View},
+        app::{AppState, ListRow, Pane, View},
         demo,
         keymap::Keymap,
         taskboxes::TaskBoxes,
@@ -70,6 +70,49 @@ fn screen_at(app: &mut AppState, width: u16, height: u16) -> String {
         .map(|row| row.iter().map(|cell| cell.symbol()).collect::<String>())
         .collect::<Vec<_>>()
         .join("\n")
+}
+
+fn favorite(app: &mut AppState, account: usize, name: &str) {
+    let index = app
+        .rows
+        .iter()
+        .position(|row| {
+            matches!(
+                row,
+                ListRow::List { account: owner, list }
+                    if *owner == account && list.name == name
+            )
+        })
+        .unwrap();
+    app.select_list(index);
+    app.update(Action::ToggleStar);
+}
+
+#[test]
+fn an_empty_favorites_section_says_how_to_add_one() {
+    let (mut app, _boxes) = demo_app();
+
+    let screen = screen(&mut app);
+
+    assert!(screen.contains("Favorites"), "{screen}");
+    assert!(screen.contains("* adds the selected list"), "{screen}");
+}
+
+#[test]
+fn favorites_sit_above_smart_and_name_the_account() {
+    let (mut app, _boxes) = demo_app();
+    favorite(&mut app, 0, "Tasks");
+    favorite(&mut app, 1, "Tasks");
+
+    let screen = screen(&mut app);
+
+    assert!(
+        screen.find("Favorites").unwrap() < screen.find("Smart").unwrap(),
+        "{screen}"
+    );
+    assert!(screen.contains("Tasks - ada@outlook.com"), "{screen}");
+    assert!(screen.contains("Tasks - ada@work.example"), "{screen}");
+    insta::assert_snapshot!(screen);
 }
 
 #[test]

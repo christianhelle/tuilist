@@ -2,8 +2,11 @@
 source: tests/tui_render.rs
 expression: screen(&mut app)
 ---
-╭ Smart ─────────────────────╮╭  ─────────────────────────────────────────╮╭ Details ──────────────╮
-│  Important (8)             ││  No tasks. a adds one                     ││  No task selected     │
+╭ Favorites ─────────────────╮╭  ─────────────────────────────────────────╮╭ Details ──────────────╮
+│* adds the selected list    ││  No tasks. a adds one                     ││  No task selected     │
+╰────────────────────────────╯│                                           ││                       │
+╭ Smart ─────────────────────╮│                                           ││                       │
+│  Important (8)             ││                                           ││                       │
 │  Planned (27)              ││                                           ││                       │
 │  All (35)                  ││                                           ││                       │
 ╰────────────────────────────╯│                                           ││                       │
@@ -19,9 +22,6 @@ expression: screen(&mut app)
 │  Tasks (12)                ││                                           ││                       │
 │  Projects (5)              ││                                           ││                       │
 │  Flagged email (1)         ││                                           ││                       │
-│                            ││                                           ││                       │
-│                            ││                                           ││                       │
-│                            ││                                           ││                       │
 │                            ││                                           ││                       │
 │                            ││                                           ││                       │
 │                            ││                                           ││                       │
