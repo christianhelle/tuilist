@@ -3,13 +3,14 @@ use ratatui::{
     Terminal,
     backend::TestBackend,
     crossterm::event::{KeyCode, KeyEvent},
+    layout::Rect,
 };
 use tuilist::{
     core::{sync_lists, sync_tasks},
     model::{Action, ListId},
     store::Store,
     tui::{
-        app::{AppState, ListRow, Pane, View},
+        app::{AppState, ListRow, Pane, Smart, View},
         demo,
         keymap::Keymap,
         taskboxes::TaskBoxes,
@@ -113,6 +114,40 @@ fn favorites_sit_above_smart_and_name_the_account() {
     assert!(screen.contains("Tasks - ada@outlook.com"), "{screen}");
     assert!(screen.contains("Tasks - ada@work.example"), "{screen}");
     insta::assert_snapshot!(screen);
+}
+
+#[test]
+fn a_click_lines_up_with_the_favorites_smart_and_list_rows() {
+    let (mut app, _boxes) = demo_app();
+    favorite(&mut app, 0, "Tasks");
+    favorite(&mut app, 1, "Tasks");
+    let area = Rect::new(0, 0, 100, 40);
+
+    let favorite = ui::hit(area, &app, 1, 1).unwrap();
+    assert_eq!(favorite.row, Some(0));
+    assert!(matches!(
+        app.rows[favorite.row.unwrap()],
+        ListRow::Favorite { .. }
+    ));
+
+    let smart = ui::hit(area, &app, 1, 5).unwrap();
+    assert_eq!(smart.row, Some(2));
+    assert!(matches!(
+        app.rows[smart.row.unwrap()],
+        ListRow::Smart(Smart::Important)
+    ));
+
+    let list = ui::hit(area, &app, 1, 11).unwrap();
+    assert_eq!(list.row, Some(6));
+    assert!(matches!(app.rows[list.row.unwrap()], ListRow::List { .. }));
+}
+
+#[test]
+fn a_click_on_the_empty_favorites_hint_picks_nothing() {
+    let (app, _boxes) = demo_app();
+    let area = Rect::new(0, 0, 100, 40);
+
+    assert_eq!(ui::hit(area, &app, 1, 1), None);
 }
 
 #[test]
