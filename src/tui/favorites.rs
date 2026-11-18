@@ -12,8 +12,12 @@ impl AppState {
         match self.favorites.iter().position(|id| id == &list.id) {
             Some(index) => {
                 self.favorites.remove(index);
+                self.status_info(format!("Removed {} from Favorites", list.name));
             }
-            None => self.favorites.push(list.id),
+            None => {
+                self.favorites.push(list.id);
+                self.status_info(format!("Added {} to Favorites", list.name));
+            }
         }
         self.rebuild_rows();
         Effect::None
