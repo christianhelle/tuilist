@@ -40,6 +40,7 @@ pub fn sections(app: &AppState) -> Vec<(&'static str, Vec<Row>)> {
                 row("a", "new list"),
                 row("F2", "rename the list"),
                 row("d  D", "delete the list and its tasks"),
+                row("*", "favorite or unfavorite the list"),
             ],
         ),
         (
