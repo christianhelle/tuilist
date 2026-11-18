@@ -1,6 +1,9 @@
 use tuilist::{
     model::{Action, ListId, TaskList},
-    tui::app::{AppState, ListRow, Pane, Smart, Status},
+    tui::{
+        app::{AppState, ListRow, Pane, Smart, Status},
+        session::Session,
+    },
 };
 
 fn list(id: &str, name: &str) -> TaskList {
@@ -208,6 +211,46 @@ fn picking_a_favorite_shows_its_list() {
         app.view,
         tuilist::tui::app::View::List { account: 0, ref id }
             if id == &ListId("work".to_owned())
+    ));
+}
+
+#[test]
+fn the_session_brings_back_the_favorites_and_the_selected_one() {
+    let mut started = app();
+    select(&mut started, "tasks");
+    started.update(Action::ToggleStar);
+    select(&mut started, "work");
+    started.update(Action::ToggleStar);
+    select_favorite(&mut started, "tasks");
+
+    let session = Session::of(&started);
+    let mut restarted = app();
+    session.apply(&mut restarted);
+
+    assert_eq!(
+        restarted.favorites,
+        [ListId("tasks".to_owned()), ListId("work".to_owned())]
+    );
+    assert!(matches!(
+        restarted.rows.get(restarted.selected_list),
+        Some(ListRow::Favorite { list, .. }) if list.id == ListId("tasks".to_owned())
+    ));
+}
+
+#[test]
+fn the_session_does_not_turn_an_ordinary_list_pick_into_a_favorite_pick() {
+    let mut started = app();
+    select(&mut started, "tasks");
+    started.update(Action::ToggleStar);
+    select(&mut started, "tasks");
+
+    let session = Session::of(&started);
+    let mut restarted = app();
+    session.apply(&mut restarted);
+
+    assert!(matches!(
+        restarted.rows.get(restarted.selected_list),
+        Some(ListRow::List { list, .. }) if list.id == ListId("tasks".to_owned())
     ));
 }
 

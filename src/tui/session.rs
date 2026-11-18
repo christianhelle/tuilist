@@ -6,7 +6,10 @@ use anyhow::Result;
 use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
 
-use crate::tui::app::{AppState, Pane, Smart, View};
+use crate::{
+    model::ListId,
+    tui::app::{AppState, ListRow, Pane, Smart, View},
+};
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
@@ -19,6 +22,8 @@ pub struct Session {
     pub details_below: bool,
     pub completed_hidden: bool,
     pub collapsed_groups: Vec<String>,
+    /// Lists in the favorites, in order.
+    pub favorites: Vec<String>,
 }
 
 impl Session {
@@ -31,7 +36,12 @@ impl Session {
             },
             list: match &app.view {
                 View::Smart(smart) => Some(smart.name().to_owned()),
-                View::List { id, .. } => Some(id.0.clone()),
+                View::List { id, .. } => match app.rows.get(app.selected_list) {
+                    Some(crate::tui::app::ListRow::Favorite { .. }) => {
+                        Some(format!("favorite:{}", id.0))
+                    }
+                    _ => Some(id.0.clone()),
+                },
             },
             task: app.selected_task,
             zoomed: app.zoomed,
@@ -39,6 +49,7 @@ impl Session {
             details_below: app.details_below,
             completed_hidden: app.completed_hidden,
             collapsed_groups: app.collapsed_groups.iter().cloned().collect(),
+            favorites: app.favorites.iter().map(|id| id.0.clone()).collect(),
         }
     }
 
@@ -53,17 +64,33 @@ impl Session {
         app.details_below = self.details_below;
         app.completed_hidden = self.completed_hidden;
         app.collapsed_groups = self.collapsed_groups.iter().cloned().collect();
+        app.set_favorites(self.favorites.iter().cloned().map(ListId).collect());
         if let Some(list) = &self.list
-            && let Some(index) = app.rows.iter().position(|row| match row {
-                crate::tui::app::ListRow::Favorite { .. } => false,
-                crate::tui::app::ListRow::Smart(smart) => Some(*smart) == Smart::from_name(list),
-                crate::tui::app::ListRow::List { list: row, .. } => &row.id.0 == list,
-                crate::tui::app::ListRow::Account(_) => false,
-            })
+            && let Some(index) = self.selected_row(app, list)
         {
             app.select_list(index);
         }
         app.selected_task = self.task;
+    }
+
+    /// The row the saved `list` names: a favorite, a smart view or an
+    /// ordinary list.
+    fn selected_row(&self, app: &AppState, list: &str) -> Option<usize> {
+        if let Some(id) = list.strip_prefix("favorite:") {
+            return app
+                .rows
+                .iter()
+                .position(|row| matches!(row, ListRow::Favorite { list, .. } if list.id.0 == id));
+        }
+        if let Some(smart) = Smart::from_name(list) {
+            return app
+                .rows
+                .iter()
+                .position(|row| matches!(row, ListRow::Smart(view) if *view == smart));
+        }
+        app.rows
+            .iter()
+            .position(|row| matches!(row, ListRow::List { list: row, .. } if row.id.0 == list))
     }
 
     pub fn path() -> Option<PathBuf> {

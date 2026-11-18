@@ -1,11 +1,17 @@
 //! Favorites: lists picked to be shown again above the smart views.
 
 use crate::{
-    model::TaskList,
+    model::{ListId, TaskList},
     tui::app::{AppState, Effect},
 };
 
 impl AppState {
+    /// Replaces the favorites, hiding any whose list is not there yet.
+    pub fn set_favorites(&mut self, favorites: Vec<ListId>) {
+        self.favorites = favorites;
+        self.rebuild_rows();
+    }
+
     /// The name a favorite shows. When another account has a favorite with
     /// the same name, it also says which account it is from.
     pub fn favorite_label(&self, account: usize, list: &TaskList) -> String {
