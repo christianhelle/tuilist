@@ -117,6 +117,28 @@ impl ListRow {
     }
 }
 
+fn row_matches_row(row: &ListRow, wanted: &ListRow) -> bool {
+    match (row, wanted) {
+        (
+            ListRow::Favorite { account, list },
+            ListRow::Favorite {
+                account: at,
+                list: list_at,
+            },
+        ) => account == at && list.id == list_at.id,
+        (ListRow::Smart(smart), ListRow::Smart(wanted)) => smart == wanted,
+        (ListRow::Account(address), ListRow::Account(wanted)) => address == wanted,
+        (
+            ListRow::List { account, list },
+            ListRow::List {
+                account: at,
+                list: list_at,
+            },
+        ) => account == at && list.id == list_at.id,
+        _ => false,
+    }
+}
+
 /// A task as the tasks pane shows it.
 #[derive(Debug, Clone)]
 pub struct TaskRow {
@@ -245,6 +267,7 @@ impl AppState {
     }
 
     pub(crate) fn rebuild_rows(&mut self) {
+        let previous = self.rows.get(self.selected_list).cloned();
         let several = self.accounts.len() > 1;
         let mut rows: Vec<ListRow> = self
             .favorite_rows()
@@ -268,11 +291,12 @@ impl AppState {
             }
         }
         self.rows = rows;
-        // Keep the view where it was, or fall back to every open task.
-        let keep = self
-            .rows
-            .iter()
-            .position(|row| self.row_matches_view(row))
+        // Keep the selected row, or the view it stood for, or fall back to
+        // every open task.
+        let keep = previous
+            .as_ref()
+            .and_then(|old| self.rows.iter().position(|row| row_matches_row(row, old)))
+            .or_else(|| self.rows.iter().position(|row| self.row_matches_view(row)))
             .or_else(|| self.rows.iter().position(|row| row.is_smart(Smart::All)))
             .unwrap_or(0);
         self.selected_list = keep;

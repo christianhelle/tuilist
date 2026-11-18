@@ -58,7 +58,7 @@ fn star_adds_the_list_to_the_favorites_at_the_top() {
     assert_eq!(list.id, ListId("work".to_owned()));
     assert!(matches!(
         app.rows.get(app.selected_list),
-        Some(ListRow::Favorite { list, .. }) if list.id == ListId("work".to_owned())
+        Some(ListRow::List { list, .. }) if list.id == ListId("work".to_owned())
     ));
 }
 
@@ -113,6 +113,102 @@ fn star_does_nothing_on_a_smart_view_or_outside_the_lists_pane() {
     app.update(Action::ToggleStar);
 
     assert!(app.favorites.is_empty());
+}
+
+fn synced(open: u32) -> Vec<(String, Vec<TaskList>)> {
+    vec![
+        (
+            "me@outlook.com".to_owned(),
+            vec![
+                TaskList {
+                    open,
+                    ..list("tasks", "Tasks")
+                },
+                list("work", "Work"),
+            ],
+        ),
+        (
+            "me@work.example".to_owned(),
+            vec![list("projects", "Projects"), list("work-tasks", "Tasks")],
+        ),
+    ]
+}
+
+fn favorites(app: &AppState) -> usize {
+    app.rows
+        .iter()
+        .take_while(|row| matches!(row, ListRow::Favorite { .. }))
+        .count()
+}
+
+#[test]
+fn a_selected_favorite_stays_selected_after_a_sync() {
+    let mut app = app();
+    select(&mut app, "tasks");
+    app.update(Action::ToggleStar);
+    select_favorite(&mut app, "tasks");
+
+    app.set_accounts(synced(7));
+
+    assert!(matches!(
+        app.rows.get(app.selected_list),
+        Some(ListRow::Favorite { list, .. }) if list.id == ListId("tasks".to_owned())
+    ));
+    assert_eq!(app.selected_list().unwrap().1.open, 7);
+}
+
+#[test]
+fn a_selected_list_stays_an_ordinary_row_when_its_favorite_is_above_it() {
+    let mut app = app();
+    select(&mut app, "tasks");
+    app.update(Action::ToggleStar);
+    select(&mut app, "tasks");
+
+    app.set_accounts(synced(0));
+
+    assert!(matches!(
+        app.rows.get(app.selected_list),
+        Some(ListRow::List { list, .. }) if list.id == ListId("tasks".to_owned())
+    ));
+}
+
+#[test]
+fn a_favorite_whose_list_is_missing_waits_for_it() {
+    let mut app = app();
+    select(&mut app, "work");
+    app.update(Action::ToggleStar);
+
+    app.set_accounts(vec![
+        ("me@outlook.com".to_owned(), vec![list("tasks", "Tasks")]),
+        (
+            "me@work.example".to_owned(),
+            vec![list("projects", "Projects"), list("work-tasks", "Tasks")],
+        ),
+    ]);
+    assert_eq!(favorites(&app), 0);
+    assert_eq!(app.favorites, [ListId("work".to_owned())]);
+
+    app.set_accounts(synced(0));
+
+    assert_eq!(favorites(&app), 1);
+    let ListRow::Favorite { list, .. } = &app.rows[0] else {
+        panic!("the favorite comes back at the top");
+    };
+    assert_eq!(list.id, ListId("work".to_owned()));
+}
+
+#[test]
+fn picking_a_favorite_shows_its_list() {
+    let mut app = app();
+    select(&mut app, "work");
+    app.update(Action::ToggleStar);
+
+    assert_eq!(app.selected_list_name(), "Work");
+    assert!(matches!(
+        app.view,
+        tuilist::tui::app::View::List { account: 0, ref id }
+            if id == &ListId("work".to_owned())
+    ));
 }
 
 #[test]
