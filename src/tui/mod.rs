@@ -7,6 +7,7 @@ pub mod demo;
 pub mod details;
 pub mod dialog;
 pub mod editor;
+pub mod favorites;
 pub mod filter_list;
 pub mod groups;
 pub mod help;

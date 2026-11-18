@@ -55,6 +55,7 @@ impl Session {
         app.collapsed_groups = self.collapsed_groups.iter().cloned().collect();
         if let Some(list) = &self.list
             && let Some(index) = app.rows.iter().position(|row| match row {
+                crate::tui::app::ListRow::Favorite { .. } => false,
                 crate::tui::app::ListRow::Smart(smart) => Some(*smart) == Smart::from_name(list),
                 crate::tui::app::ListRow::List { list: row, .. } => &row.id.0 == list,
                 crate::tui::app::ListRow::Account(_) => false,

@@ -101,6 +101,7 @@ pub struct AccountView {
 
 #[derive(Debug, Clone)]
 pub enum ListRow {
+    Favorite { account: usize, list: TaskList },
     Smart(Smart),
     Account(String),
     List { account: usize, list: TaskList },
@@ -109,6 +110,10 @@ pub enum ListRow {
 impl ListRow {
     pub fn selectable(&self) -> bool {
         !matches!(self, ListRow::Account(_))
+    }
+
+    fn is_smart(&self, wanted: Smart) -> bool {
+        matches!(self, ListRow::Smart(smart) if *smart == wanted)
     }
 }
 
@@ -140,6 +145,8 @@ pub enum Effect {
 
 pub struct AppState {
     pub accounts: Vec<AccountView>,
+    /// Lists shown again above the smart views, in the order they were added.
+    pub favorites: Vec<crate::model::ListId>,
     pub rows: Vec<ListRow>,
     pub selected_list: usize,
     pub view: View,
@@ -172,6 +179,7 @@ impl Default for AppState {
     fn default() -> Self {
         Self {
             accounts: Vec::new(),
+            favorites: Vec::new(),
             rows: vec![
                 ListRow::Smart(Smart::Important),
                 ListRow::Smart(Smart::Planned),
@@ -236,13 +244,18 @@ impl AppState {
         self.rebuild_rows();
     }
 
-    fn rebuild_rows(&mut self) {
+    pub(crate) fn rebuild_rows(&mut self) {
         let several = self.accounts.len() > 1;
-        let mut rows = vec![
+        let mut rows: Vec<ListRow> = self
+            .favorite_rows()
+            .into_iter()
+            .map(|(account, list)| ListRow::Favorite { account, list })
+            .collect();
+        rows.extend([
             ListRow::Smart(Smart::Important),
             ListRow::Smart(Smart::Planned),
             ListRow::Smart(Smart::All),
-        ];
+        ]);
         for (index, account) in self.accounts.iter().enumerate() {
             if several {
                 rows.push(ListRow::Account(account.address.clone()));
@@ -260,18 +273,38 @@ impl AppState {
             .rows
             .iter()
             .position(|row| self.row_matches_view(row))
-            .unwrap_or(2);
+            .or_else(|| self.rows.iter().position(|row| row.is_smart(Smart::All)))
+            .unwrap_or(0);
         self.selected_list = keep;
         if !self.rows[keep].selectable() {
             self.view = View::Smart(Smart::All);
         }
     }
 
+    /// The favorites whose lists the accounts still have, with the account
+    /// each is in. A favorite whose list is missing is left out but kept.
+    fn favorite_rows(&self) -> Vec<(usize, TaskList)> {
+        self.favorites
+            .iter()
+            .filter_map(|id| {
+                self.accounts
+                    .iter()
+                    .enumerate()
+                    .find_map(|(account, view)| {
+                        view.lists
+                            .iter()
+                            .find(|list| &list.id == id)
+                            .map(|list| (account, list.clone()))
+                    })
+            })
+            .collect()
+    }
+
     fn row_matches_view(&self, row: &ListRow) -> bool {
         match (row, &self.view) {
             (ListRow::Smart(smart), View::Smart(view)) => smart == view,
             (
-                ListRow::List { account, list },
+                ListRow::Favorite { account, list } | ListRow::List { account, list },
                 View::List {
                     account: viewed,
                     id,
@@ -284,7 +317,9 @@ impl AppState {
     /// The lists pane's selected row, when it is a task list.
     pub fn selected_list(&self) -> Option<(usize, TaskList)> {
         match self.rows.get(self.selected_list) {
-            Some(ListRow::List { account, list }) => Some((*account, list.clone())),
+            Some(ListRow::Favorite { account, list } | ListRow::List { account, list }) => {
+                Some((*account, list.clone()))
+            }
             _ => None,
         }
     }
@@ -305,7 +340,7 @@ impl AppState {
         self.selected_list = index;
         self.view = match &self.rows[index] {
             ListRow::Smart(smart) => View::Smart(*smart),
-            ListRow::List { account, list } => View::List {
+            ListRow::Favorite { account, list } | ListRow::List { account, list } => View::List {
                 account: *account,
                 id: list.id.clone(),
             },
@@ -658,6 +693,7 @@ impl AppState {
             Rename => self.rename(),
             Delete => self.delete(),
             ToggleComplete => self.toggle_complete(),
+            ToggleStar if self.focus == Pane::Lists => self.toggle_favorite(),
             ToggleStar => self.toggle_star(),
             Edit => self.edit_task(),
             DueToday => self.due_today(),

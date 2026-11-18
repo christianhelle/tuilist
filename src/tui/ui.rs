@@ -241,7 +241,7 @@ fn draw_lists(frame: &mut Frame, area: Rect, app: &AppState) {
             break;
         }
         match row {
-            ListRow::Smart(_) => continue,
+            ListRow::Favorite { .. } | ListRow::Smart(_) => continue,
             ListRow::Account(address) => {
                 let line = Line::from(format!(" {address}")).style(Style::new().dim());
                 frame.render_widget(Paragraph::new(line), Rect::new(inner.x, y, inner.width, 1));
