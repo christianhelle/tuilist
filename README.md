@@ -95,6 +95,8 @@ Use your own Entra ID public client with `--client-id` or
 ## The screen
 
 Move between panes with `Tab`, move with `j`/`k`, and press `?` for every key.
+Favorites marked with `*` sit above the smart views, followed by each account's
+lists.
 
 ## Keys
 
@@ -129,6 +131,7 @@ Press `?` from any pane for this list, wherever you are.
 | `a` | new list |
 | `F2` | rename the list |
 | `d` `D` | delete the list and its tasks |
+| `*` | add or remove the list from the favorites |
 
 ### Tasks
 
@@ -226,7 +229,8 @@ update.
 
 - Accounts, in sign-in order: the data directory's `accounts.json`.
 - Each account's SQLite cache: a folder named after its address.
-- The last screen (pane, list, task): `session.json` in the cache directory.
+- The last screen (pane, list, task) and the favorites: `session.json` in the
+  cache directory.
 - Refresh tokens: the system keychain, under the account's address.
 
 ## Development

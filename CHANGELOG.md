@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Favorites: mark lists with `*` to keep them above the smart views, with the
+  account named when two favorites share a name. Favorites are kept locally and
+  restored with the selected one on the next start.
+
 ## [0.1.1] - 2026-11-15
 
 ### Added
