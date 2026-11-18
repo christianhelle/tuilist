@@ -283,7 +283,7 @@ impl AppState {
 
     /// The favorites whose lists the accounts still have, with the account
     /// each is in. A favorite whose list is missing is left out but kept.
-    fn favorite_rows(&self) -> Vec<(usize, TaskList)> {
+    pub(crate) fn favorite_rows(&self) -> Vec<(usize, TaskList)> {
         self.favorites
             .iter()
             .filter_map(|id| {

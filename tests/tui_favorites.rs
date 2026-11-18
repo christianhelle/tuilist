@@ -23,7 +23,7 @@ fn app() -> AppState {
         ),
         (
             "me@work.example".to_owned(),
-            vec![list("projects", "Projects")],
+            vec![list("projects", "Projects"), list("work-tasks", "Tasks")],
         ),
     ]);
     app
@@ -113,6 +113,26 @@ fn star_does_nothing_on_a_smart_view_or_outside_the_lists_pane() {
     app.update(Action::ToggleStar);
 
     assert!(app.favorites.is_empty());
+}
+
+#[test]
+fn favorites_with_the_same_name_say_which_account_they_are_from() {
+    let mut app = app();
+    for id in ["tasks", "work-tasks", "projects", "work"] {
+        select(&mut app, id);
+        app.update(Action::ToggleStar);
+    }
+
+    assert_eq!(
+        app.favorite_label(0, &app.accounts[0].lists[0]),
+        "Tasks - me@outlook.com"
+    );
+    assert_eq!(
+        app.favorite_label(1, &app.accounts[1].lists[1]),
+        "Tasks - me@work.example"
+    );
+    assert_eq!(app.favorite_label(1, &app.accounts[1].lists[0]), "Projects");
+    assert_eq!(app.favorite_label(0, &app.accounts[0].lists[1]), "Work");
 }
 
 #[test]
