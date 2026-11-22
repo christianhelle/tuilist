@@ -1,4 +1,6 @@
-//! Finding web links in a task's text.
+//! Finding web links in a task's text, and opening them in the browser.
+
+use std::process::{Command, Stdio};
 
 const SCHEMES: [&str; 2] = ["https://", "http://"];
 
@@ -45,6 +47,31 @@ pub fn first<'a>(texts: impl IntoIterator<Item = &'a str>) -> Option<&'a str> {
     texts
         .into_iter()
         .find_map(|text| find(text).first().map(|(_, link)| *link))
+}
+
+/// Opens `link` in the default browser, without waiting for it.
+pub fn open(link: &str) -> std::io::Result<()> {
+    browser(link)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .map(drop)
+}
+
+/// The command that hands `link` to the system's browser. Windows goes
+/// through `url.dll`, as `cmd /c start` would read the `&` in a link.
+fn browser(link: &str) -> Command {
+    let (program, args): (&str, &[&str]) = if cfg!(windows) {
+        ("rundll32", &["url.dll,FileProtocolHandler"])
+    } else if cfg!(target_os = "macos") {
+        ("open", &[])
+    } else {
+        ("xdg-open", &[])
+    };
+    let mut command = Command::new(program);
+    command.args(args).arg(link);
+    command
 }
 
 fn next_start(text: &str, from: usize) -> Option<usize> {
@@ -142,6 +169,20 @@ mod tests {
         let line = "ææ https://one.com ø https://two.com";
 
         assert_eq!(at(line, 22), Some("https://two.com"));
+    }
+
+    #[test]
+    fn the_link_goes_to_the_browser_as_one_argument() {
+        let command = browser("https://example.com/?a=1&b=2");
+
+        let args: Vec<_> = command.get_args().collect();
+        assert_eq!(
+            args.last().unwrap().to_str(),
+            Some("https://example.com/?a=1&b=2")
+        );
+        if cfg!(windows) {
+            assert_eq!(command.get_program(), "rundll32");
+        }
     }
 
     #[test]
