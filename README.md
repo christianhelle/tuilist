@@ -148,6 +148,7 @@ Press `?` from any pane for this list, wherever you are.
 | `m` | move to another list |
 | `d` `D` | delete |
 | `y` | copy the title |
+| `o` | open the first link in the browser |
 | `c` | hide or show completed |
 | `Space` | mark and move down |
 | `Ctrl-A` | mark every task shown |
@@ -167,6 +168,7 @@ its due date, reminder, star and notes.
 | `x` | check the step, or complete the task |
 | `s` | add a step |
 | `i` | edit the task |
+| `o` | open the link under the cursor |
 | `→` `←` | next or previous task |
 
 ### Search
