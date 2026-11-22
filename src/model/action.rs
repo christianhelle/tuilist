@@ -52,6 +52,8 @@ pub enum Action {
     Move,
     /// `y`.
     Copy,
+    /// `o`: open a link in the task in the browser.
+    OpenLink,
     /// `c`.
     ToggleCompletedShown,
 }

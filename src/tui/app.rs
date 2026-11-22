@@ -384,6 +384,30 @@ impl AppState {
         }
     }
 
+    /// Opens the first link in the selected task's title, notes or steps.
+    fn open_first_link(&mut self) -> Effect {
+        let Some(row) = self.selected_task() else {
+            return Effect::None;
+        };
+        let texts = [row.task.title.as_str(), row.task.notes.as_str()];
+        let steps = self.details.lines().iter().map(String::as_str);
+        match crate::tui::links::first(texts.into_iter().chain(steps)) {
+            Some(link) => {
+                let link = link.to_owned();
+                self.open_link(link)
+            }
+            None => {
+                self.status_info("No link in this task");
+                Effect::None
+            }
+        }
+    }
+
+    fn open_link(&mut self, link: String) -> Effect {
+        self.status_info(format!("Opening {link}"));
+        Effect::OpenUrl(link)
+    }
+
     pub fn set_tasks(&mut self, tasks: Vec<TaskRow>) {
         self.tasks = tasks;
         let visible = self.visible_tasks();
@@ -596,6 +620,19 @@ impl AppState {
             KeyCode::Char('t') => self.due_today(),
             KeyCode::Char('T') => self.ask_due(),
             KeyCode::Char('m') => self.move_tasks(),
+            KeyCode::Char('o') => {
+                let (row, column) = self.details.viewer.cursor();
+                let link = self
+                    .details
+                    .lines()
+                    .get(row)
+                    .and_then(|line| crate::tui::links::at(line, column))
+                    .map(str::to_owned);
+                match link {
+                    Some(link) => self.open_link(link),
+                    None => self.open_first_link(),
+                }
+            }
             _ => Effect::None,
         }
     }
@@ -732,6 +769,8 @@ impl AppState {
             Copy => self
                 .selected_task()
                 .map_or(Effect::None, |row| Effect::Copy(row.task.title.clone())),
+            OpenLink if self.focus == Pane::Lists => Effect::None,
+            OpenLink => self.open_first_link(),
             ToggleCompletedShown => {
                 if self.focus == Pane::Tasks {
                     self.completed_hidden = !self.completed_hidden;

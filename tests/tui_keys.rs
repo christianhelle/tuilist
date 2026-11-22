@@ -252,3 +252,69 @@ fn u_confirms_before_replacing_the_binary() {
         Effect::InstallUpdate
     ));
 }
+
+/// The demo with the selected task's notes set to `notes`, shown in the
+/// details.
+fn with_notes(notes: &str) -> AppState {
+    let (mut app, _boxes) = demo_app();
+    app.focus = Pane::Tasks;
+    let id = app.selected_task().unwrap().task.id.clone();
+    let row = app.tasks.iter_mut().find(|row| row.task.id == id).unwrap();
+    row.task.notes = notes.to_owned();
+    app.show_details(None);
+    app
+}
+
+#[test]
+fn o_opens_the_first_link_of_the_selected_task() {
+    let mut app = with_notes("See https://one.example and https://two.example.");
+
+    let Effect::OpenUrl(link) = press(&mut app, KeyCode::Char('o')) else {
+        panic!("o should open the link");
+    };
+
+    assert_eq!(link, "https://one.example");
+}
+
+#[test]
+fn o_says_so_when_the_task_has_no_link() {
+    let mut app = with_notes("Nothing to follow");
+
+    assert!(matches!(press(&mut app, KeyCode::Char('o')), Effect::None));
+    assert_eq!(
+        app.status,
+        Some(Status::Info("No link in this task".to_owned()))
+    );
+}
+
+#[test]
+fn o_in_the_details_opens_the_link_under_the_cursor() {
+    let mut app = with_notes("https://one.example\nthen https://two.example here");
+    app.focus = Pane::Details;
+    let row = app
+        .details
+        .lines()
+        .iter()
+        .position(|line| line.contains("two"))
+        .unwrap();
+    app.details.viewer.move_to(row, 8);
+
+    let Effect::OpenUrl(link) = press(&mut app, KeyCode::Char('o')) else {
+        panic!("o should open the link");
+    };
+
+    assert_eq!(link, "https://two.example");
+}
+
+#[test]
+fn o_in_the_details_falls_back_to_the_first_link() {
+    let mut app = with_notes("https://one.example");
+    app.focus = Pane::Details;
+    app.details.viewer.move_to(0, 0);
+
+    let Effect::OpenUrl(link) = press(&mut app, KeyCode::Char('o')) else {
+        panic!("o should open the link");
+    };
+
+    assert_eq!(link, "https://one.example");
+}

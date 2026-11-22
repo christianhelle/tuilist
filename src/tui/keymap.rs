@@ -72,6 +72,7 @@ fn single_key(key: KeyEvent) -> Option<Action> {
         KeyCode::Char('s') => Action::AddStep,
         KeyCode::Char('m') => Action::Move,
         KeyCode::Char('y') => Action::Copy,
+        KeyCode::Char('o') => Action::OpenLink,
         KeyCode::Char('c') => Action::ToggleCompletedShown,
         _ => return None,
     };
@@ -255,6 +256,10 @@ mod tests {
         assert_eq!(
             action(KeyEvent::from(KeyCode::Char('y'))),
             Some(Action::Copy)
+        );
+        assert_eq!(
+            action(KeyEvent::from(KeyCode::Char('o'))),
+            Some(Action::OpenLink)
         );
         assert_eq!(
             action(KeyEvent::from(KeyCode::Char('c'))),
