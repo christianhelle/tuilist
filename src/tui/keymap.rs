@@ -20,6 +20,9 @@ impl Keymap {
             self.pending_g = true;
             return None;
         }
+        if pending_g && key.code == KeyCode::Char('x') && key.modifiers.is_empty() {
+            return Some(Action::OpenLink);
+        }
         single_key(key)
     }
 }
@@ -148,6 +151,21 @@ mod tests {
             keymap.action_for(KeyEvent::from(KeyCode::Char('g'))),
             None,
             "the count starts again"
+        );
+    }
+
+    #[test]
+    fn gx_opens_a_link_instead_of_completing() {
+        let mut keymap = Keymap::default();
+
+        assert_eq!(keymap.action_for(KeyEvent::from(KeyCode::Char('g'))), None);
+        assert_eq!(
+            keymap.action_for(KeyEvent::from(KeyCode::Char('x'))),
+            Some(Action::OpenLink)
+        );
+        assert_eq!(
+            keymap.action_for(KeyEvent::from(KeyCode::Char('x'))),
+            Some(Action::ToggleComplete)
         );
     }
 
