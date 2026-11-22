@@ -57,7 +57,7 @@ pub fn sections(app: &AppState) -> Vec<(&'static str, Vec<Row>)> {
                 row("m", "move to another list"),
                 row("d  D", "delete"),
                 row("y", "copy the title"),
-                row("o", "open the first link in the browser"),
+                row("o  gx", "open the first link in the browser"),
                 row("c", "hide or show completed"),
                 row("Space", "mark and move down"),
                 row("Ctrl-A", "mark every task shown"),
@@ -72,7 +72,7 @@ pub fn sections(app: &AppState) -> Vec<(&'static str, Vec<Row>)> {
                 row("x", "check the step, or complete the task"),
                 row("s", "add a step"),
                 row("i", "edit the task"),
-                row("o", "open the link under the cursor"),
+                row("o  gx", "open the link under the cursor"),
                 row("→ ←", "next or previous task"),
             ],
         ),
@@ -125,6 +125,14 @@ mod tests {
                         assert_eq!(keymap.action_for(event), None);
                         event = KeyEvent::from(KeyCode::Char('g'));
                         assert_eq!(keymap.action_for(event), Some(crate::model::Action::Top));
+                        continue;
+                    }
+                    if key == "gx" {
+                        assert_eq!(keymap.action_for(KeyEvent::from(KeyCode::Char('g'))), None);
+                        assert_eq!(
+                            keymap.action_for(KeyEvent::from(KeyCode::Char('x'))),
+                            Some(crate::model::Action::OpenLink)
+                        );
                         continue;
                     }
                     let code = match key {
