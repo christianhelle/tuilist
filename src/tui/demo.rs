@@ -97,7 +97,7 @@ const PERSONAL: &[Spec] = &[
         false,
         false,
         false,
-        "The engine and the sync loop",
+        "The engine and the sync loop: https://github.com/christianhelle/tuilist/pulls",
     ),
     spec(
         "p-sprint",
@@ -127,7 +127,8 @@ const PERSONAL: &[Spec] = &[
         false,
         false,
         false,
-        "",
+        "https://ratatui.rs/concepts/
+https://doc.rust-lang.org/book/",
     ),
     spec(
         "p-boxes",
@@ -331,7 +332,7 @@ const WORK: &[Spec] = &[
         false,
         false,
         false,
-        "Expired links must resync",
+        "Expired links must resync. See https://learn.microsoft.com/graph/delta-query-overview",
     ),
     spec(
         "w-book",
@@ -594,6 +595,17 @@ mod tests {
         assert!(tasks.iter().any(|task| task.due.is_some()));
         assert!(tasks.iter().any(|task| task.recurring));
         assert!(tasks.iter().any(|task| !task.notes.is_empty()));
+    }
+
+    #[test]
+    fn some_demo_tasks_have_links_to_open() {
+        let links = accounts()
+            .iter()
+            .flat_map(|(_, backend)| backend.tasks())
+            .filter(|task| crate::tui::links::first([task.notes.as_str()]).is_some())
+            .count();
+
+        assert!(links >= 3, "{links} tasks with links");
     }
 
     #[test]
