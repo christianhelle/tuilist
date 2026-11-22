@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Favorites: mark lists with `*` to keep them above the smart views, with the
   account named when two favorites share a name. Favorites are kept locally and
   restored with the selected one on the next start.
-- `o` opens a task's web link in the default browser: the first link from the
+- `o` or `gx` opens a task's web link in the default browser: the first link from the
   tasks pane, or the one under the cursor in the details.
 
 ## [0.1.1] - 2026-11-15
