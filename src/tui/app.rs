@@ -384,6 +384,21 @@ impl AppState {
         }
     }
 
+    /// Opens the link under the details' cursor, or else the task's first.
+    fn open_link_at_cursor(&mut self) -> Effect {
+        let (row, column) = self.details.viewer.cursor();
+        let link = self
+            .details
+            .lines()
+            .get(row)
+            .and_then(|line| crate::tui::links::at(line, column))
+            .map(str::to_owned);
+        match link {
+            Some(link) => self.open_link(link),
+            None => self.open_first_link(),
+        }
+    }
+
     /// Opens the first link in the selected task's title, notes or steps.
     fn open_first_link(&mut self) -> Effect {
         let Some(row) = self.selected_task() else {
@@ -546,6 +561,7 @@ impl AppState {
         if self.focus == Pane::Details {
             match self.details.viewer.key(key, self.page, &mut self.register) {
                 crate::tui::viewer::Request::Copy(text) => return Effect::Copy(text),
+                crate::tui::viewer::Request::OpenLink => return self.open_link_at_cursor(),
                 crate::tui::viewer::Request::None => return Effect::None,
                 crate::tui::viewer::Request::Unhandled => {}
             }
@@ -620,19 +636,7 @@ impl AppState {
             KeyCode::Char('t') => self.due_today(),
             KeyCode::Char('T') => self.ask_due(),
             KeyCode::Char('m') => self.move_tasks(),
-            KeyCode::Char('o') => {
-                let (row, column) = self.details.viewer.cursor();
-                let link = self
-                    .details
-                    .lines()
-                    .get(row)
-                    .and_then(|line| crate::tui::links::at(line, column))
-                    .map(str::to_owned);
-                match link {
-                    Some(link) => self.open_link(link),
-                    None => self.open_first_link(),
-                }
-            }
+            KeyCode::Char('o') => self.open_link_at_cursor(),
             _ => Effect::None,
         }
     }

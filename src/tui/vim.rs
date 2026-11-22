@@ -90,6 +90,11 @@ impl Vim {
         }
     }
 
+    /// Whether a `g` waits for the key after it.
+    pub fn waits_after_g(&self) -> bool {
+        self.g
+    }
+
     fn reset(&mut self) {
         self.count = None;
         self.operator = None;

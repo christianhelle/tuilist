@@ -318,3 +318,28 @@ fn o_in_the_details_falls_back_to_the_first_link() {
 
     assert_eq!(link, "https://one.example");
 }
+
+#[test]
+fn gx_in_the_details_opens_the_link_and_completes_nothing() {
+    let mut app = with_notes(
+        "https://one.example
+then https://two.example here",
+    );
+    app.focus = Pane::Details;
+    let row = app
+        .details
+        .lines()
+        .iter()
+        .position(|line| line.contains("two"))
+        .unwrap();
+    app.details.viewer.move_to(row, 8);
+    let open = app.selected_task().unwrap().task.status;
+
+    press(&mut app, KeyCode::Char('g'));
+    let Effect::OpenUrl(link) = press(&mut app, KeyCode::Char('x')) else {
+        panic!("gx should open the link");
+    };
+
+    assert_eq!(link, "https://two.example");
+    assert_eq!(app.selected_task().unwrap().task.status, open);
+}

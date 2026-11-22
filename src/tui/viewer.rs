@@ -19,6 +19,8 @@ pub enum Request {
     None,
     /// Copy the picked or yanked text to the clipboard.
     Copy(String),
+    /// `gx`: open the link under the cursor.
+    OpenLink,
     /// The viewer has no use for the key in normal mode, so the pane may.
     Unhandled,
 }
@@ -82,6 +84,14 @@ impl Viewer {
     /// Acts on a key, moving `page` lines a page and yanking into `register`.
     pub fn key(&mut self, key: KeyEvent, page: usize, register: &mut Register) -> Request {
         let picking = self.mode() != VimMode::Normal;
+        if !picking
+            && self.editor.vim.waits_after_g()
+            && key.code == KeyCode::Char('x')
+            && !key.modifiers.contains(KeyModifiers::CONTROL)
+        {
+            vim::to_normal(&mut self.editor);
+            return Request::OpenLink;
+        }
         if !reads(key, picking) {
             if picking {
                 return Request::None;
@@ -162,6 +172,18 @@ Dear Charles,",
                 text: "Dear Charles,".into(),
                 linewise: true
             }
+        );
+    }
+
+    #[test]
+    fn gx_asks_to_open_the_link_under_the_cursor() {
+        let mut viewer = viewing("https://example.com");
+
+        assert_eq!(keys(&mut viewer, "gx"), Request::OpenLink);
+        assert_eq!(
+            keys(&mut viewer, "x"),
+            Request::Unhandled,
+            "the g is used up"
         );
     }
 
