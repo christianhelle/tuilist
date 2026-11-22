@@ -13,6 +13,7 @@ pub mod groups;
 pub mod help;
 pub mod input;
 pub mod keymap;
+pub mod links;
 pub mod list_edit;
 pub mod numbers;
 pub mod run_loop;
