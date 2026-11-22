@@ -7,13 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-22
+
 ### Added
 
 - Favorites: mark lists with `*` to keep them above the smart views, with the
   account named when two favorites share a name. Favorites are kept locally and
   restored with the selected one on the next start.
-- `o` or `gx` opens a task's web link in the default browser: the first link from the
-  tasks pane, or the one under the cursor in the details.
+- `o` or `gx` opens a task's web link in the default browser: the first link
+  from the tasks pane, or the one under the cursor in the details.
+- The Windows executable carries the TUIList icon.
 
 ## [0.1.1] - 2026-11-15
 
@@ -39,5 +42,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The details pane's arrow, page and jump keys move between tasks.
 
-[Unreleased]: https://github.com/christianhelle/tuilist/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/christianhelle/tuilist/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/christianhelle/tuilist/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/christianhelle/tuilist/releases/tag/v0.1.1
