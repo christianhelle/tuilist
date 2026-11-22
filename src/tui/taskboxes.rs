@@ -181,7 +181,7 @@ impl TaskBoxes {
 
     pub fn apply(&mut self, app: &mut AppState, effect: Effect) {
         let result = match effect {
-            Effect::None | Effect::Quit | Effect::Copy(_) => Ok(()),
+            Effect::None | Effect::Quit | Effect::Copy(_) | Effect::OpenUrl(_) => Ok(()),
             Effect::InstallUpdate => {
                 let Some(install) = &self.install else {
                     app.status_error("Run `todo update` to install it");

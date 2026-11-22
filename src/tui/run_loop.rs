@@ -13,6 +13,7 @@ use crate::tui::{
     app::{AppState, Effect},
     clipboard,
     keymap::Keymap,
+    links,
     taskboxes::TaskBoxes,
     ui::{self, Mouse},
 };
@@ -43,6 +44,11 @@ pub fn on_terminal_event(
         let mut out = std::io::stdout();
         out.write_all(clipboard::osc52(text).as_bytes())?;
         out.flush()?;
+    }
+    if let Effect::OpenUrl(link) = &effect
+        && let Err(error) = links::open(link)
+    {
+        app.status_error(format!("Could not open {link}: {error}"));
     }
     boxes.apply(app, effect);
     Ok(())

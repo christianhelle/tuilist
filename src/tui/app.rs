@@ -158,9 +158,14 @@ pub enum Effect {
     None,
     ReloadLists,
     ReloadTasks,
-    Send { account: usize, command: Command },
+    Send {
+        account: usize,
+        command: Command,
+    },
     SendAll(Command),
     Copy(String),
+    /// Open a web link in the browser.
+    OpenUrl(String),
     InstallUpdate,
     Quit,
 }
